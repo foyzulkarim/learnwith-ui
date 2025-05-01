@@ -1,6 +1,6 @@
 import { db } from "./index";
 import * as schema from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 async function seed() {
   try {
@@ -165,15 +165,35 @@ async function seed() {
       return map;
     }, {} as Record<string, number>);
 
-    // Seed modules for Web Development Fundamentals
-    const webDevModules = [
+    // Seed modules for all courses
+    const allModules = [
+      // Web Development Fundamentals Modules
       { title: "Module 1: Introduction to Web Development", courseId: courseMap["Web Development Fundamentals"], order: 1 },
       { title: "Module 2: CSS Styling", courseId: courseMap["Web Development Fundamentals"], order: 2 },
       { title: "Module 3: JavaScript Basics", courseId: courseMap["Web Development Fundamentals"], order: 3 },
-      { title: "Module 4: Responsive Web Design", courseId: courseMap["Web Development Fundamentals"], order: 4 }
+      { title: "Module 4: Responsive Web Design", courseId: courseMap["Web Development Fundamentals"], order: 4 },
+      
+      // Data Science Essentials Modules
+      { title: "Module 1: Introduction to Data Science", courseId: courseMap["Data Science Essentials"], order: 1 },
+      { title: "Module 2: Data Analysis with Python", courseId: courseMap["Data Science Essentials"], order: 2 },
+      { title: "Module 3: Data Visualization", courseId: courseMap["Data Science Essentials"], order: 3 },
+      { title: "Module 4: Machine Learning Basics", courseId: courseMap["Data Science Essentials"], order: 4 },
+      
+      // JavaScript Mastery Modules
+      { title: "Module 1: JavaScript Fundamentals", courseId: courseMap["JavaScript Mastery: The Complete Guide"], order: 1 },
+      { title: "Module 2: Working with DOM", courseId: courseMap["JavaScript Mastery: The Complete Guide"], order: 2 },
+      { title: "Module 3: ES6+ Features", courseId: courseMap["JavaScript Mastery: The Complete Guide"], order: 3 },
+      { title: "Module 4: Asynchronous JavaScript", courseId: courseMap["JavaScript Mastery: The Complete Guide"], order: 4 },
+      
+      // Introduction to Machine Learning Modules
+      { title: "Module 1: Introduction to AI and ML", courseId: courseMap["Introduction to Machine Learning"], order: 1 },
+      { title: "Module 2: Supervised Learning Algorithms", courseId: courseMap["Introduction to Machine Learning"], order: 2 },
+      { title: "Module 3: Unsupervised Learning", courseId: courseMap["Introduction to Machine Learning"], order: 3 },
+      { title: "Module 4: Practical ML Projects", courseId: courseMap["Introduction to Machine Learning"], order: 4 }
     ];
 
-    for (const module of webDevModules) {
+    // Seed modules
+    for (const module of allModules) {
       const existingModule = await db.query.modules.findFirst({
         where: eq(schema.modules.title, module.title)
       });
@@ -185,55 +205,140 @@ async function seed() {
         console.log(`Module already exists: ${module.title}`);
       }
     }
-
+    
     // Get seeded modules for reference
     const seededModules = await db.query.modules.findMany();
     const moduleMap = seededModules.reduce((map, module) => {
       map[module.title] = module.id;
       return map;
     }, {} as Record<string, number>);
-
-    // Seed lessons for Web Development Fundamentals Module 1
-    const module1Lessons = [
+    
+    // Seed lessons for multiple courses
+    const allLessons = [
+      // Web Development Fundamentals - Module 1
       { 
         title: "HTML Fundamentals", 
-        moduleId: moduleMap["Module 1: Introduction to Web Development"], 
+        moduleId: moduleMap["Module 1: Introduction to Web Development"] || 0, 
         courseId: courseMap["Web Development Fundamentals"],
         order: 1,
-        videoUrl: "https://example.com/videos/html-fundamentals.mp4",
+        videoUrl: "https://demo-videos.vercel.app/html-fundamentals.mp4",
         duration: "28:44",
         completed: true,
         content: "In this lesson, you'll learn the core HTML concepts that form the foundation of every web page. We'll cover document structure, elements, attributes, and how to create your first HTML document."
       },
       { 
         title: "Getting Started with Web Servers", 
-        moduleId: moduleMap["Module 1: Introduction to Web Development"], 
+        moduleId: moduleMap["Module 1: Introduction to Web Development"] || 0, 
         courseId: courseMap["Web Development Fundamentals"],
         order: 2,
-        videoUrl: "https://example.com/videos/web-servers.mp4",
+        videoUrl: "https://demo-videos.vercel.app/web-servers.mp4",
         duration: "22:15",
         completed: true,
         content: "Learn how web servers work and how to set up a basic development environment for your web projects."
       },
       { 
         title: "Understanding HTTP Protocol", 
-        moduleId: moduleMap["Module 1: Introduction to Web Development"], 
+        moduleId: moduleMap["Module 1: Introduction to Web Development"] || 0, 
         courseId: courseMap["Web Development Fundamentals"],
         order: 3,
-        videoUrl: "https://example.com/videos/http-protocol.mp4",
+        videoUrl: "https://demo-videos.vercel.app/http-protocol.mp4",
         duration: "18:30",
         completed: true,
         content: "Explore the HTTP protocol and understand how browsers communicate with servers."
       },
       { 
         title: "Web Development Tools", 
-        moduleId: moduleMap["Module 1: Introduction to Web Development"], 
+        moduleId: moduleMap["Module 1: Introduction to Web Development"] || 0, 
         courseId: courseMap["Web Development Fundamentals"],
         order: 4,
-        videoUrl: "https://example.com/videos/dev-tools.mp4",
+        videoUrl: "https://demo-videos.vercel.app/dev-tools.mp4",
         duration: "25:10",
         completed: false,
         content: "Discover essential tools and extensions that will make your web development workflow more efficient."
+      },
+      
+      // Introduction to Machine Learning - Module 1
+      { 
+        title: "Introduction to AI Concepts", 
+        moduleId: moduleMap["Module 1: Introduction to AI and ML"] || 0, 
+        courseId: courseMap["Introduction to Machine Learning"],
+        order: 1,
+        videoUrl: "https://demo-videos.vercel.app/ml-intro.mp4",
+        duration: "31:22",
+        completed: false,
+        content: "This lesson introduces the fundamental concepts of artificial intelligence and machine learning, providing a solid foundation for the rest of the course."
+      },
+      { 
+        title: "History of Machine Learning", 
+        moduleId: moduleMap["Module 1: Introduction to AI and ML"] || 0, 
+        courseId: courseMap["Introduction to Machine Learning"],
+        order: 2,
+        videoUrl: "https://demo-videos.vercel.app/ml-history.mp4",
+        duration: "26:15",
+        completed: false,
+        content: "Explore the rich history and evolution of machine learning from its early days to modern developments."
+      },
+      { 
+        title: "Types of Machine Learning", 
+        moduleId: moduleMap["Module 1: Introduction to AI and ML"] || 0, 
+        courseId: courseMap["Introduction to Machine Learning"],
+        order: 3,
+        videoUrl: "https://demo-videos.vercel.app/ml-types.mp4", 
+        duration: "33:48",
+        completed: false,
+        content: "Learn about the different types of machine learning: supervised, unsupervised, and reinforcement learning."
+      },
+      { 
+        title: "Setting Up Your Machine Learning Environment", 
+        moduleId: moduleMap["Module 1: Introduction to AI and ML"] || 0, 
+        courseId: courseMap["Introduction to Machine Learning"],
+        order: 4,
+        videoUrl: "https://demo-videos.vercel.app/ml-setup.mp4",
+        duration: "24:30",
+        completed: false,
+        content: "Set up your machine learning development environment with Python, Jupyter notebooks, and essential libraries."
+      },
+      
+      // JavaScript Mastery - Module 1
+      { 
+        title: "JavaScript Language Basics", 
+        moduleId: moduleMap["Module 1: JavaScript Fundamentals"] || 0, 
+        courseId: courseMap["JavaScript Mastery: The Complete Guide"],
+        order: 1,
+        videoUrl: "https://demo-videos.vercel.app/js-basics.mp4",
+        duration: "34:12",
+        completed: false,
+        content: "Get started with JavaScript by understanding variables, data types, operators, and basic expressions."
+      },
+      { 
+        title: "Control Flow in JavaScript", 
+        moduleId: moduleMap["Module 1: JavaScript Fundamentals"] || 0, 
+        courseId: courseMap["JavaScript Mastery: The Complete Guide"],
+        order: 2,
+        videoUrl: "https://demo-videos.vercel.app/js-control-flow.mp4",
+        duration: "28:45",
+        completed: false,
+        content: "Learn about conditional statements, loops, and control flow techniques in JavaScript."
+      },
+      { 
+        title: "Functions and Scope", 
+        moduleId: moduleMap["Module 1: JavaScript Fundamentals"] || 0, 
+        courseId: courseMap["JavaScript Mastery: The Complete Guide"],
+        order: 3,
+        videoUrl: "https://demo-videos.vercel.app/js-functions.mp4",
+        duration: "42:18",
+        completed: false,
+        content: "Master JavaScript functions, parameters, return values, and understand variable scope and hoisting."
+      },
+      { 
+        title: "Objects and Arrays", 
+        moduleId: moduleMap["Module 1: JavaScript Fundamentals"] || 0, 
+        courseId: courseMap["JavaScript Mastery: The Complete Guide"],
+        order: 4,
+        videoUrl: "https://demo-videos.vercel.app/js-objects-arrays.mp4",
+        duration: "37:22",
+        completed: false,
+        content: "Explore JavaScript's core data structures: objects and arrays, and learn methods to manipulate them effectively."
       }
     ];
 
