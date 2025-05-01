@@ -79,7 +79,7 @@ export default function CourseCreationForm() {
     duration?: string;
     order: number;
   } | null>(null);
-  const [expandedModules, setExpandedModules] = useState<Record<number, boolean>>({});
+  const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>({});
 
   // Fetch categories
   const { data: categories } = useQuery<Category[]>({
@@ -336,7 +336,15 @@ export default function CourseCreationForm() {
               ? "bg-white shadow"
               : "text-slate-600 hover:text-slate-900"
           }`}
-          onClick={() => setActiveTab("preview")}
+          onClick={() => {
+            // Expand all modules for better visibility in preview
+            const expandAll = {};
+            modules.forEach(module => {
+              expandAll[module.id] = true;
+            });
+            setExpandedModules(expandAll);
+            setActiveTab("preview");
+          }}
         >
           Preview
         </button>
@@ -929,35 +937,55 @@ export default function CourseCreationForm() {
                       <div className="space-y-4">
                         {modules.map((module) => (
                           <div key={module.id} className="border rounded-lg">
-                            <div className="p-3 bg-slate-50 font-semibold">
-                              {module.title}
+                            <div 
+                              className="p-3 bg-slate-50 font-semibold flex items-center justify-between cursor-pointer"
+                              onClick={() => toggleModuleExpanded(module.id)}
+                            >
+                              <div className="flex items-center">
+                                {expandedModules[module.id] ? (
+                                  <ChevronDown className="h-4 w-4 mr-2 text-gray-500" />
+                                ) : (
+                                  <ChevronRight className="h-4 w-4 mr-2 text-gray-500" />
+                                )}
+                                {module.title}
+                              </div>
+                              <span className="text-xs text-gray-500 font-normal">
+                                {module.lessons.length} lesson{module.lessons.length !== 1 ? 's' : ''}
+                              </span>
                             </div>
-                            <div className="p-3">
-                              {module.lessons.length === 0 ? (
-                                <p className="text-gray-500 italic text-sm">
-                                  No lessons in this module
-                                </p>
-                              ) : (
-                                <ul className="space-y-2">
-                                  {module.lessons.map((lesson) => (
-                                    <li
-                                      key={lesson.id}
-                                      className="flex items-center text-sm p-2 hover:bg-gray-50 rounded"
-                                    >
-                                      <span className="w-4 h-4 mr-2 bg-gray-200 rounded-full flex items-center justify-center text-xs">
-                                        {lesson.order}
-                                      </span>
-                                      {lesson.title}
-                                      {lesson.videoUrl && (
-                                        <span className="ml-2 text-xs text-blue-500">
-                                          (Video)
+                            {expandedModules[module.id] && (
+                              <div className="p-3">
+                                {module.lessons.length === 0 ? (
+                                  <p className="text-gray-500 italic text-sm">
+                                    No lessons in this module
+                                  </p>
+                                ) : (
+                                  <ul className="space-y-2">
+                                    {module.lessons.map((lesson) => (
+                                      <li
+                                        key={lesson.id}
+                                        className="flex items-center text-sm p-2 hover:bg-gray-50 rounded"
+                                      >
+                                        <span className="w-4 h-4 mr-2 bg-gray-200 rounded-full flex items-center justify-center text-xs">
+                                          {lesson.order}
                                         </span>
-                                      )}
-                                    </li>
-                                  ))}
-                                </ul>
-                              )}
-                            </div>
+                                        {lesson.title}
+                                        {lesson.videoUrl && (
+                                          <span className="ml-2 text-xs text-blue-500">
+                                            (Video)
+                                          </span>
+                                        )}
+                                        {lesson.duration && (
+                                          <span className="ml-2 text-xs text-gray-500">
+                                            {lesson.duration}
+                                          </span>
+                                        )}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                )}
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -981,6 +1009,12 @@ export default function CourseCreationForm() {
                   if (activeTab === "details") {
                     setActiveTab("curriculum");
                   } else if (activeTab === "curriculum") {
+                    // Before switching to preview, expand all modules for better visibility
+                    const expandAll = {};
+                    modules.forEach(module => {
+                      expandAll[module.id] = true;
+                    });
+                    setExpandedModules(expandAll);
                     setActiveTab("preview");
                   } else {
                     // Submit form if on preview tab
