@@ -1268,10 +1268,12 @@ export default function CourseCreationForm({ courseId }: CourseCreationFormProps
                   }
                 }}
               >
-                {activeTab === "preview" ? "Submit for Review" : "Next Step"}
+                {activeTab === "preview" ? (isEditMode ? "Save Changes" : "Submit for Review") : "Next Step"}
               </Button>
               {activeTab === "preview" && (
-                <Button type="submit">Publish Course</Button>
+                <Button type="submit">
+                  {isEditMode ? "Update Course" : "Publish Course"}
+                </Button>
               )}
             </div>
           </div>
