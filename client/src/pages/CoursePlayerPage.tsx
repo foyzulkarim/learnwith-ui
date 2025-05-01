@@ -226,8 +226,17 @@ export default function CoursePlayerPage() {
         {/* Top navigation bar */}
         <header className="border-b border-gray-200 py-3 px-4 bg-white flex items-center justify-between">
           <div className="flex items-center">
-            <Link href={`/course/${courseId}`} className="text-gray-700 hover:text-primary mr-4">
-              <ChevronLeft className="h-6 w-6" />
+            <Link 
+              href={`/course/${courseId}`} 
+              className="flex items-center text-gray-700 hover:text-primary mr-4 border border-gray-200 rounded-md py-1 px-2 hover:bg-gray-50 transition-colors"
+              onClick={(e) => {
+                // Force a clean navigation to the course page
+                e.preventDefault();
+                window.location.href = `/course/${courseId}`;
+              }}
+            >
+              <ChevronLeft className="h-5 w-5" />
+              <span className="ml-1 text-sm">Back to course</span>
             </Link>
             <div>
               <h1 className="text-lg font-medium">{course.title}</h1>
