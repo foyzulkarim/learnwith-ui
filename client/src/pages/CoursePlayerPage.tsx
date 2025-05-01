@@ -467,7 +467,7 @@ export default function CoursePlayerPage() {
           <div className="flex flex-wrap items-center text-sm text-gray-300 mt-3">
             <div className="flex items-center mr-4">
               <Clock className="h-4 w-4 mr-1" />
-              <span>Last updated {course.updatedAt ? new Date(course.updatedAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : "May 2025"}</span>
+              <span>Last updated May 2025</span>
             </div>
             <div className="flex items-center mr-4">
               <Globe className="h-4 w-4 mr-1" />
