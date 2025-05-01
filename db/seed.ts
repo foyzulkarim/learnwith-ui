@@ -339,6 +339,60 @@ async function seed() {
         duration: "37:22",
         completed: false,
         content: "Explore JavaScript's core data structures: objects and arrays, and learn methods to manipulate them effectively."
+      },
+      
+      // Introduction to Machine Learning - Module 1
+      { 
+        title: "Introduction to AI and Machine Learning", 
+        moduleId: moduleMap["Module 1: Introduction to AI and ML"] || 0, 
+        courseId: courseMap["Introduction to Machine Learning"],
+        order: 1,
+        videoUrl: "https://demo-videos.vercel.app/ml-intro.mp4",
+        duration: "32:15",
+        completed: false,
+        content: "Understand the fundamental concepts of artificial intelligence and machine learning, their history, and their applications in the modern world."
+      },
+      { 
+        title: "Setting Up Your ML Environment", 
+        moduleId: moduleMap["Module 1: Introduction to AI and ML"] || 0, 
+        courseId: courseMap["Introduction to Machine Learning"],
+        order: 2,
+        videoUrl: "https://demo-videos.vercel.app/ml-setup.mp4",
+        duration: "24:30",
+        completed: false,
+        content: "Learn how to set up your development environment for machine learning projects using Python, Jupyter notebooks, and essential libraries like NumPy and Pandas."
+      },
+      { 
+        title: "Data Preprocessing for ML", 
+        moduleId: moduleMap["Module 1: Introduction to AI and ML"] || 0, 
+        courseId: courseMap["Introduction to Machine Learning"],
+        order: 3,
+        videoUrl: "https://demo-videos.vercel.app/ml-preprocessing.mp4",
+        duration: "38:45",
+        completed: false,
+        content: "Discover the critical data preprocessing techniques needed for successful machine learning, including cleaning, normalization, encoding categorical data, and handling missing values."
+      },
+      
+      // Introduction to Machine Learning - Module 2
+      { 
+        title: "Linear Regression", 
+        moduleId: moduleMap["Module 2: Supervised Learning Algorithms"] || 0, 
+        courseId: courseMap["Introduction to Machine Learning"],
+        order: 1,
+        videoUrl: "https://demo-videos.vercel.app/ml-linear-regression.mp4",
+        duration: "42:18",
+        completed: false,
+        content: "Master the fundamentals of linear regression for predicting continuous values, including simple and multiple regression, gradient descent, and model evaluation metrics."
+      },
+      { 
+        title: "Classification Algorithms", 
+        moduleId: moduleMap["Module 2: Supervised Learning Algorithms"] || 0, 
+        courseId: courseMap["Introduction to Machine Learning"],
+        order: 2,
+        videoUrl: "https://demo-videos.vercel.app/ml-classification.mp4",
+        duration: "45:22",
+        completed: false,
+        content: "Explore popular classification algorithms including logistic regression, decision trees, random forests, and support vector machines for predicting categorical outcomes."
       }
     ];
 
