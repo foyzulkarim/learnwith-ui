@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { ArrowLeft, ArrowRight, BookOpen } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen, ChevronLeft, Share2, Clock, MessageSquare, ListChecks } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -208,6 +208,205 @@ export default function CoursePlayerPage() {
   const completedLessons = lessons?.filter(lesson => lesson.completed).length || 0;
   const progressPercentage = totalLessons > 0 ? (completedLessons / totalLessons) * 100 : 0;
 
+  // Determine if we're in lesson view or course overview
+  const isLessonView = !!currentLesson;
+
+  // If we're in lesson view, use Udemy-style lesson player layout
+  if (isLessonView) {
+    return (
+      <section className="min-h-screen bg-white flex flex-col">
+        {/* Top navigation bar */}
+        <header className="border-b border-gray-200 py-3 px-4 bg-white flex items-center justify-between">
+          <div className="flex items-center">
+            <Link href={`/course/${courseId}`} className="text-gray-700 hover:text-primary mr-4">
+              <ChevronLeft className="h-6 w-6" />
+            </Link>
+            <div>
+              <h1 className="text-lg font-medium">{course.title}</h1>
+              <div className="flex items-center text-sm text-gray-500">
+                <span>{currentLesson?.title}</span>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <button className="text-gray-600 hover:text-primary">
+              <Share2 className="h-5 w-5" />
+            </button>
+            <Progress value={progressPercentage} className="w-24 h-2" />
+            <span className="text-sm text-gray-600">{Math.round(progressPercentage)}%</span>
+          </div>
+        </header>
+
+        <div className="flex flex-col md:flex-row h-full">
+          {/* Main content area */}
+          <div className="md:w-2/3 lg:w-3/4">
+            {/* Video player area */}
+            <div className="bg-black">
+              <VideoPlayer 
+                videoUrl={currentLesson?.videoUrl || "https://demo-videos.vercel.app/placeholder.mp4"} 
+                thumbnailUrl={course.thumbnail}
+              />
+            </div>
+            
+            {/* Lesson details area */}
+            <div className="p-6">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="border-b border-gray-200 w-full justify-start mb-6">
+                  <TabsTrigger value="overview" className="px-6 py-3 data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary">
+                    <span className="flex items-center gap-2">
+                      <BookOpen className="h-4 w-4" />
+                      Overview
+                    </span>
+                  </TabsTrigger>
+                  <TabsTrigger value="notes" className="px-6 py-3 data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary">
+                    <span className="flex items-center gap-2">
+                      <MessageSquare className="h-4 w-4" />
+                      Notes
+                    </span>
+                  </TabsTrigger>
+                  <TabsTrigger value="resources" className="px-6 py-3 data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary">
+                    <span className="flex items-center gap-2">
+                      <ListChecks className="h-4 w-4" />
+                      Resources
+                    </span>
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="overview">
+                  <h2 className="text-xl font-medium mb-4">Current Lesson: {currentLesson?.title}</h2>
+                  <div className="text-gray-700 mb-6">
+                    {currentLesson?.content || (
+                      <p>
+                        In this lesson, you'll learn core concepts that are essential for mastering the subject.
+                        Follow along with the video and complete the exercises to reinforce your learning.
+                      </p>
+                    )}
+                  </div>
+                  
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+                    <h3 className="font-medium mb-2">Key Takeaways</h3>
+                    <ul className="list-disc pl-5 text-gray-700 space-y-1">
+                      <li>Understanding the fundamental principles</li>
+                      <li>How to apply these concepts in real-world scenarios</li>
+                      <li>Best practices and common pitfalls to avoid</li>
+                      <li>Tips for further learning and practice</li>
+                    </ul>
+                  </div>
+                  
+                  {/* Quiz section */}
+                  {quizQuestions && quizQuestions.length > 0 && (
+                    <div className="bg-background rounded-lg p-6 border border-gray-200 mb-6">
+                      <h3 className="text-lg font-medium mb-4">Knowledge Check</h3>
+                      <p className="mb-6">Test your understanding with this quick quiz.</p>
+                      
+                      <div className="space-y-4">
+                        {quizQuestions.map((question, index) => {
+                          // Default quiz options if parsing fails
+                          const defaultOptions = ["Option A", "Option B", "Option C", "Option D"];
+                          let parsedOptions: string[] = defaultOptions;
+                          
+                          return (
+                            <div key={question.id}>
+                              <p className="font-medium mb-2">{index + 1}. {question.question}</p>
+                              <RadioGroup 
+                                value={quizAnswers[question.id] || ""} 
+                                onValueChange={(value) => setQuizAnswers({...quizAnswers, [question.id]: value})}
+                              >
+                                <div className="space-y-2">
+                                  {parsedOptions.map((option, i) => (
+                                    <div key={i} className="flex items-center space-x-2">
+                                      <RadioGroupItem value={option.toString()} id={`q${question.id}-opt${i}`} />
+                                      <Label htmlFor={`q${question.id}-opt${i}`}>{option.toString()}</Label>
+                                    </div>
+                                  ))}
+                                </div>
+                              </RadioGroup>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      
+                      <Button 
+                        className="mt-6 bg-primary hover:bg-primary/90"
+                        onClick={handleCheckAnswers}
+                        disabled={checkQuizAnswersMutation.isPending}
+                      >
+                        {checkQuizAnswersMutation.isPending ? "Checking..." : "Check Answers"}
+                      </Button>
+                    </div>
+                  )}
+                </TabsContent>
+                
+                <TabsContent value="notes">
+                  <h3 className="text-lg font-medium mb-4">Your Notes</h3>
+                  <Textarea 
+                    className="w-full border border-gray-300 rounded-lg p-3 min-h-[200px] focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" 
+                    placeholder="Add your notes for this lesson here..."
+                    value={noteContent}
+                    onChange={(e) => setNoteContent(e.target.value)}
+                  />
+                  <Button 
+                    variant="secondary" 
+                    className="mt-3 bg-gray-100 hover:bg-gray-200 text-foreground"
+                    onClick={handleSaveNote}
+                    disabled={saveNoteMutation.isPending}
+                  >
+                    {saveNoteMutation.isPending ? "Saving..." : "Save Notes"}
+                  </Button>
+                </TabsContent>
+                
+                <TabsContent value="resources">
+                  <h3 className="text-lg font-medium mb-4">Course Resources</h3>
+                  <div className="bg-gray-50 rounded-lg p-5 border border-gray-200">
+                    <p className="text-gray-700 mb-4">
+                      Access additional materials to enhance your learning experience.
+                    </p>
+                    <ul className="space-y-3">
+                      <li className="flex items-center text-primary hover:text-secondary">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                          <polyline points="13 2 13 9 20 9"></polyline>
+                        </svg>
+                        <a href="#" className="hover:underline">Course slides (PDF)</a>
+                      </li>
+                      <li className="flex items-center text-primary hover:text-secondary">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                          <polyline points="14 2 14 8 20 8"></polyline>
+                          <line x1="16" y1="13" x2="8" y2="13"></line>
+                          <line x1="16" y1="17" x2="8" y2="17"></line>
+                          <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                        <a href="#" className="hover:underline">Exercise files</a>
+                      </li>
+                      <li className="flex items-center text-primary hover:text-secondary">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                          <polyline points="7 10 12 15 17 10"></polyline>
+                          <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        <a href="#" className="hover:underline">Reference guide</a>
+                      </li>
+                    </ul>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </div>
+          </div>
+          
+          {/* Sidebar with course content */}
+          <div className="md:w-1/3 lg:w-1/4 border-l border-gray-200">
+            <LessonList 
+              courseId={courseId}
+              currentLessonId={lessonId}
+            />
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Course overview page (when no lesson is selected)
   return (
     <section className="py-10 bg-white">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -269,187 +468,36 @@ export default function CoursePlayerPage() {
         <div className="flex flex-col lg:flex-row">
           {/* Main content area */}
           <div className="lg:w-8/12 lg:pr-8">
-            {/* If we have a current lesson, show the video player */}
-            {currentLesson?.videoUrl ? (
-              <VideoPlayer 
-                videoUrl={currentLesson.videoUrl} 
-                thumbnailUrl={course.thumbnail}
+            {/* Course thumbnail image */}
+            <div className="relative pb-[56.25%] bg-gray-100 rounded-lg mb-6 overflow-hidden">
+              <img 
+                src={course.thumbnail} 
+                alt={course.title}
+                className="absolute inset-0 w-full h-full object-cover"
               />
-            ) : (
-              <div className="relative pb-[56.25%] bg-gray-100 rounded-lg mb-6 overflow-hidden">
-                <img 
-                  src={course.thumbnail} 
-                  alt={course.title}
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
-                  <div className="text-white text-center p-4">
-                    <h3 className="text-xl font-bold mb-2">Start Learning</h3>
-                    <p className="mb-4">Select a lesson from the curriculum to begin</p>
-                    <Button 
-                      className="bg-primary hover:bg-primary/90"
-                      onClick={() => {
-                        if (lessons && lessons.length > 0) {
-                          setLessonId(lessons[0].id);
-                        }
-                      }}
-                    >
-                      Start First Lesson
-                    </Button>
-                  </div>
+              <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                <div className="text-white text-center p-4">
+                  <h3 className="text-xl font-bold mb-2">Start Learning</h3>
+                  <p className="mb-4">Select a lesson from the curriculum to begin</p>
+                  <Button 
+                    className="bg-primary hover:bg-primary/90"
+                    onClick={() => {
+                      if (lessons && lessons.length > 0) {
+                        setLessonId(lessons[0].id);
+                      }
+                    }}
+                  >
+                    Start First Lesson
+                  </Button>
                 </div>
               </div>
-            )}
-            
-            {/* Lesson content or course overview */}
-            <div className="mb-10">
-              {currentLesson ? (
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <TabsList className="border-b border-gray-200 w-full justify-start">
-                    <TabsTrigger value="overview" className="px-4 py-4">Overview</TabsTrigger>
-                    <TabsTrigger value="notes" className="px-4 py-4">Notes</TabsTrigger>
-                    <TabsTrigger value="resources" className="px-4 py-4">Resources</TabsTrigger>
-                    <TabsTrigger value="discussion" className="px-4 py-4">Discussion</TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="overview">
-                    <h2 className="text-xl font-medium mb-4">Current Lesson: {currentLesson.title}</h2>
-                    <div className="text-gray-700 mb-6">
-                      {currentLesson.content || (
-                        <p>
-                          In this lesson, you'll learn core concepts that are essential for mastering the subject.
-                          Follow along with the video and complete the exercises to reinforce your learning.
-                        </p>
-                      )}
-                    </div>
-                    
-                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
-                      <h3 className="font-medium mb-2">Key Takeaways</h3>
-                      <ul className="list-disc pl-5 text-gray-700 space-y-1">
-                        <li>Understanding the fundamental principles</li>
-                        <li>How to apply these concepts in real-world scenarios</li>
-                        <li>Best practices and common pitfalls to avoid</li>
-                        <li>Tips for further learning and practice</li>
-                      </ul>
-                    </div>
-                    
-                    {/* Quiz section */}
-                    {quizQuestions && quizQuestions.length > 0 && (
-                      <div className="bg-background rounded-lg p-6 border border-gray-200 mb-6">
-                        <h3 className="text-lg font-medium mb-4">Knowledge Check</h3>
-                        <p className="mb-6">Test your understanding with this quick quiz.</p>
-                        
-                        <div className="space-y-4">
-                          {quizQuestions.map((question, index) => {
-                            // Default quiz options if parsing fails
-                            const defaultOptions = ["Option A", "Option B", "Option C", "Option D"];
-                            let parsedOptions: string[] = defaultOptions;
-                            
-                            return (
-                              <div key={question.id}>
-                                <p className="font-medium mb-2">{index + 1}. {question.question}</p>
-                                <RadioGroup 
-                                  value={quizAnswers[question.id] || ""} 
-                                  onValueChange={(value) => setQuizAnswers({...quizAnswers, [question.id]: value})}
-                                >
-                                  <div className="space-y-2">
-                                    {parsedOptions.map((option, i) => (
-                                      <div key={i} className="flex items-center space-x-2">
-                                        <RadioGroupItem value={option.toString()} id={`q${question.id}-opt${i}`} />
-                                        <Label htmlFor={`q${question.id}-opt${i}`}>{option.toString()}</Label>
-                                      </div>
-                                    ))}
-                                  </div>
-                                </RadioGroup>
-                              </div>
-                            );
-                          })}
-                        </div>
-                        
-                        <Button 
-                          className="mt-6 bg-primary hover:bg-primary/90"
-                          onClick={handleCheckAnswers}
-                          disabled={checkQuizAnswersMutation.isPending}
-                        >
-                          {checkQuizAnswersMutation.isPending ? "Checking..." : "Check Answers"}
-                        </Button>
-                      </div>
-                    )}
-                  </TabsContent>
-                  
-                  <TabsContent value="notes">
-                    <h3 className="text-lg font-medium mb-4">Your Notes</h3>
-                    <Textarea 
-                      className="w-full border border-gray-300 rounded-lg p-3 min-h-[200px] focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" 
-                      placeholder="Add your notes for this lesson here..."
-                      value={noteContent}
-                      onChange={(e) => setNoteContent(e.target.value)}
-                    />
-                    <Button 
-                      variant="secondary" 
-                      className="mt-3 bg-gray-100 hover:bg-gray-200 text-foreground"
-                      onClick={handleSaveNote}
-                      disabled={saveNoteMutation.isPending}
-                    >
-                      {saveNoteMutation.isPending ? "Saving..." : "Save Notes"}
-                    </Button>
-                  </TabsContent>
-                  
-                  <TabsContent value="resources">
-                    <h3 className="text-lg font-medium mb-4">Course Resources</h3>
-                    <div className="bg-gray-50 rounded-lg p-5 border border-gray-200">
-                      <p className="text-gray-700 mb-4">
-                        Access additional materials to enhance your learning experience.
-                      </p>
-                      <ul className="space-y-3">
-                        <li className="flex items-center text-primary hover:text-secondary">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
-                            <polyline points="13 2 13 9 20 9"></polyline>
-                          </svg>
-                          <a href="#" className="hover:underline">Course slides (PDF)</a>
-                        </li>
-                        <li className="flex items-center text-primary hover:text-secondary">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                            <polyline points="14 2 14 8 20 8"></polyline>
-                            <line x1="16" y1="13" x2="8" y2="13"></line>
-                            <line x1="16" y1="17" x2="8" y2="17"></line>
-                            <polyline points="10 9 9 9 8 9"></polyline>
-                          </svg>
-                          <a href="#" className="hover:underline">Exercise files</a>
-                        </li>
-                        <li className="flex items-center text-primary hover:text-secondary">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                            <polyline points="7 10 12 15 17 10"></polyline>
-                            <line x1="12" y1="15" x2="12" y2="3"></line>
-                          </svg>
-                          <a href="#" className="hover:underline">Reference guide</a>
-                        </li>
-                      </ul>
-                    </div>
-                  </TabsContent>
-                  
-                  <TabsContent value="discussion">
-                    <h3 className="text-lg font-medium mb-4">Discussion Forum</h3>
-                    <div className="bg-gray-50 rounded-lg p-6 text-center">
-                      <p className="text-gray-700 mb-4">
-                        Join the conversation with other students and instructors.
-                      </p>
-                      <Button className="bg-primary hover:bg-primary/90">
-                        Go to Forum
-                      </Button>
-                    </div>
-                  </TabsContent>
-                </Tabs>
-              ) : (
-                renderCourseOverview()
-              )}
             </div>
+            
+            {/* Course overview content */}
+            {renderCourseOverview()}
           </div>
           
-          {/* Sidebar with course content */}
+          {/* Course content sidebar */}
           <div className="lg:w-4/12">
             <LessonList 
               courseId={courseId}
