@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { ArrowLeft, ArrowRight, BookOpen, ChevronLeft, Share2, Clock, MessageSquare, ListChecks } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen, ChevronLeft, Share2, Clock, MessageSquare, ListChecks, 
+         Check, Users, Award, Play, Star, Globe, BarChart, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -415,7 +416,7 @@ export default function CoursePlayerPage() {
 
   // Course overview page (when no lesson is selected)
   return (
-    <section className="py-10 bg-white">
+    <section className="py-10 bg-gray-50">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-6">
           <Link href="/courses" className="text-primary hover:text-secondary inline-flex items-center">
@@ -423,51 +424,58 @@ export default function CoursePlayerPage() {
           </Link>
         </div>
         
-        {/* Course header */}
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold mb-2">{course.title}</h1>
+        {/* Course header - dark section similar to Udemy */}
+        <div className="bg-gray-900 text-white p-8 rounded-t-lg mb-0">
+          <h1 className="text-3xl font-bold mb-3">{course.title}</h1>
+          <p className="text-xl mb-4">{course.description || "Master key concepts and techniques with this comprehensive course"}</p>
           
           <div className="flex flex-wrap items-center gap-2 mb-4">
-            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-              {course.totalLessons || 0} lessons
-            </Badge>
-            {course.featured && (
-              <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
-                Featured
+            {course.bestseller && (
+              <Badge className="bg-yellow-500 text-black border-yellow-400 font-semibold">
+                BESTSELLER
               </Badge>
             )}
-            {course.bestseller && (
-              <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                Bestseller
+            {course.featured && (
+              <Badge className="bg-purple-500 text-white border-purple-400">
+                FEATURED
               </Badge>
             )}
             {course.isNew && (
-              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                New
+              <Badge className="bg-green-500 text-white border-green-400">
+                NEW
               </Badge>
             )}
+            
+            <div className="flex items-center text-yellow-400 ml-2">
+              <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+              <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+              <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+              <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+              <Star className="h-5 w-5 fill-yellow-400 text-yellow-400 opacity-60" />
+              <span className="ml-2 text-white">({course.ratingCount || "1,245"} ratings)</span>
+            </div>
+            <span className="text-gray-300 ml-2">{course.totalStudents || "75,141"} students</span>
           </div>
           
-          <div className="flex items-center mb-4">
-            <Avatar className="h-8 w-8 mr-2">
-              <AvatarImage src={course.instructorAvatar || undefined} alt={course.instructor} />
-              <AvatarFallback>{course.instructor.charAt(0)}</AvatarFallback>
-            </Avatar>
-            <span className="font-medium mr-6">{course.instructor}</span>
-            
-            {course.rating && (
-              <div className="flex items-center mr-6">
-                <svg className="w-4 h-4 text-yellow-400 mr-1" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
-                </svg>
-                <span className="text-sm font-medium">{course.rating}</span>
-              </div>
-            )}
-            
-            <div className="text-sm flex items-center">
-              <span className="mr-2">Progress:</span>
-              <Progress value={progressPercentage} className="w-20 h-2" />
-              <span className="ml-2">{Math.round(progressPercentage)}%</span>
+          <div className="flex items-center">
+            <span className="text-gray-300">Created by</span>
+            <Link href="#instructor" className="text-primary ml-2 hover:underline">
+              {course.instructor}
+            </Link>
+          </div>
+          
+          <div className="flex flex-wrap items-center text-sm text-gray-300 mt-3">
+            <div className="flex items-center mr-4">
+              <Clock className="h-4 w-4 mr-1" />
+              <span>Last updated {course.updatedAt ? new Date(course.updatedAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : "May 2025"}</span>
+            </div>
+            <div className="flex items-center mr-4">
+              <Globe className="h-4 w-4 mr-1" />
+              <span>English</span>
+            </div>
+            <div className="flex items-center">
+              <MessageSquare className="h-4 w-4 mr-1" />
+              <span>English, Spanish, Arabic captions</span>
             </div>
           </div>
         </div>
