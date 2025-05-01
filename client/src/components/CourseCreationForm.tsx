@@ -50,7 +50,12 @@ const courseFormSchema = z.object({
 
 type CourseFormValues = z.infer<typeof courseFormSchema>;
 
-export default function CourseCreationForm() {
+type CourseCreationFormProps = {
+  courseId?: number;
+};
+
+export default function CourseCreationForm({ courseId }: CourseCreationFormProps = {}) {
+  const isEditMode = !!courseId;
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("details"); // details, curriculum, preview
   const [thumbnailUrl, setThumbnailUrl] = useState("");

@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { Link, useLocation } from "wouter";
+import { useState, useEffect } from "react";
+import { Link, useLocation, useRoute } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { 
   Tabs, 
   TabsContent, 
@@ -19,7 +20,131 @@ import {
   PlusCircle,
   Settings,
 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import CourseCreationForm from "@/components/CourseCreationForm";
+
+// Define the course type
+interface Course {
+  id: number;
+  title: string;
+  description: string;
+  thumbnail: string;
+  instructor: string;
+  instructorAvatar?: string;
+  categoryId: number;
+  price?: string;
+  rating?: string;
+  published?: boolean;
+  studentCount?: number;
+  featured?: boolean;
+  bestseller?: boolean;
+  isNew?: boolean;
+}
+
+// Component to display course grid with fetched data
+function CoursesGrid() {
+  // Fetch courses from the API
+  const { data: courses, isLoading, error } = useQuery<Course[]>({
+    queryKey: ["/api/courses"],
+  });
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="flex flex-col md:flex-row gap-4 p-4 border rounded-lg">
+            <Skeleton className="w-full md:w-48 h-32 rounded-md" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-6 w-3/4" />
+              <Skeleton className="h-4 w-1/4" />
+              <Skeleton className="h-16 w-full" />
+              <div className="flex flex-wrap gap-2">
+                <Skeleton className="h-8 w-16" />
+                <Skeleton className="h-8 w-24" />
+                <Skeleton className="h-8 w-20" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return <div className="text-red-500">Failed to load courses. Please try again later.</div>;
+  }
+
+  if (!courses || courses?.length === 0) {
+    return (
+      <div className="text-center p-8">
+        <h3 className="text-lg font-semibold mb-2">No courses yet</h3>
+        <p className="text-gray-500 mb-4">You haven't created any courses yet.</p>
+        <Link href="/creator-dashboard/create-course">
+          <button className="inline-flex items-center justify-center rounded-md text-sm font-medium h-10 px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Create Your First Course
+          </button>
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {courses?.map((course: Course) => (
+        <div key={course.id} className="flex flex-col md:flex-row gap-4 p-4 border rounded-lg hover:shadow-md transition-shadow">
+          <img 
+            src={course.thumbnail || "https://placehold.co/400x300?text=Course+Thumbnail"} 
+            alt={`${course.title} thumbnail`} 
+            className="w-full md:w-48 h-32 object-cover rounded-md"
+          />
+          <div className="flex-1">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+              <h3 className="text-lg font-bold">{course.title}</h3>
+              <div className="flex items-center gap-2 text-sm">
+                {course.published ? (
+                  <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full">Published</span>
+                ) : (
+                  <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full">Draft</span>
+                )}
+                {course.studentCount && (
+                  <span className="text-gray-500">{course.studentCount} students</span>
+                )}
+              </div>
+            </div>
+            <p className="text-gray-600 mt-2">{course.description}</p>
+            <div className="flex flex-wrap gap-2 mt-4">
+              <Link href={`/creator-dashboard/create-course?courseId=${course.id}`}>
+                <button className="text-sm px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100">
+                  Edit
+                </button>
+              </Link>
+              <Link href={`/creator-dashboard/courses/${course.id}/curriculum`}>
+                <button className="text-sm px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100">
+                  Curriculum
+                </button>
+              </Link>
+              <Link href={`/course-player/${course.id}`}>
+                <button className="text-sm px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100">
+                  Preview
+                </button>
+              </Link>
+              {course.published ? (
+                <button className="text-sm px-3 py-1 border border-red-300 text-red-600 rounded-md hover:bg-red-50">
+                  Unpublish
+                </button>
+              ) : (
+                <button className="text-sm px-3 py-1 border border-green-300 text-green-600 rounded-md hover:bg-green-50">
+                  Publish
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function CreatorDashboardPage() {
   const [location] = useLocation();
@@ -165,103 +290,7 @@ export default function CreatorDashboardPage() {
                     </Link>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
-                      {/* Sample course cards */}
-                      <div className="flex flex-col md:flex-row gap-4 p-4 border rounded-lg hover:shadow-md transition-shadow">
-                        <img 
-                          src="https://images.unsplash.com/photo-1593720213428-28a5b9e94613?auto=format&fit=crop&q=80&w=200&h=150" 
-                          alt="Course thumbnail" 
-                          className="w-full md:w-48 h-32 object-cover rounded-md"
-                        />
-                        <div className="flex-1">
-                          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                            <h3 className="text-lg font-bold">Advanced JavaScript Patterns</h3>
-                            <div className="flex items-center gap-2 text-sm">
-                              <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full">Published</span>
-                              <span className="text-gray-500">25 students</span>
-                            </div>
-                          </div>
-                          <p className="text-gray-600 mt-2">Master advanced JavaScript patterns and techniques to level up your development skills.</p>
-                          <div className="flex flex-wrap gap-2 mt-4">
-                            <button className="text-sm px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100">
-                              Edit
-                            </button>
-                            <button className="text-sm px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100">
-                              Curriculum
-                            </button>
-                            <button className="text-sm px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100">
-                              Preview
-                            </button>
-                            <button className="text-sm px-3 py-1 border border-red-300 text-red-600 rounded-md hover:bg-red-50">
-                              Unpublish
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col md:flex-row gap-4 p-4 border rounded-lg hover:shadow-md transition-shadow">
-                        <img 
-                          src="https://images.unsplash.com/photo-1633356122544-f134324a6cee?auto=format&fit=crop&q=80&w=200&h=150" 
-                          alt="Course thumbnail" 
-                          className="w-full md:w-48 h-32 object-cover rounded-md"
-                        />
-                        <div className="flex-1">
-                          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                            <h3 className="text-lg font-bold">React Fundamentals</h3>
-                            <div className="flex items-center gap-2 text-sm">
-                              <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full">Published</span>
-                              <span className="text-gray-500">42 students</span>
-                            </div>
-                          </div>
-                          <p className="text-gray-600 mt-2">Learn React from the ground up and build modern user interfaces with this comprehensive guide.</p>
-                          <div className="flex flex-wrap gap-2 mt-4">
-                            <button className="text-sm px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100">
-                              Edit
-                            </button>
-                            <button className="text-sm px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100">
-                              Curriculum
-                            </button>
-                            <button className="text-sm px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100">
-                              Preview
-                            </button>
-                            <button className="text-sm px-3 py-1 border border-red-300 text-red-600 rounded-md hover:bg-red-50">
-                              Unpublish
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col md:flex-row gap-4 p-4 border rounded-lg hover:shadow-md transition-shadow">
-                        <img 
-                          src="https://images.unsplash.com/photo-1526498460520-4c246339dccb?auto=format&fit=crop&q=80&w=200&h=150" 
-                          alt="Course thumbnail" 
-                          className="w-full md:w-48 h-32 object-cover rounded-md"
-                        />
-                        <div className="flex-1">
-                          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                            <h3 className="text-lg font-bold">Vue.js for Beginners</h3>
-                            <div className="flex items-center gap-2 text-sm">
-                              <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full">Draft</span>
-                            </div>
-                          </div>
-                          <p className="text-gray-600 mt-2">A comprehensive introduction to Vue.js, perfect for beginners and those new to the framework.</p>
-                          <div className="flex flex-wrap gap-2 mt-4">
-                            <button className="text-sm px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100">
-                              Edit
-                            </button>
-                            <button className="text-sm px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100">
-                              Curriculum
-                            </button>
-                            <button className="text-sm px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100">
-                              Preview
-                            </button>
-                            <button className="text-sm px-3 py-1 border border-green-300 text-green-600 rounded-md hover:bg-green-50">
-                              Publish
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                    <CoursesGrid />
                   </CardContent>
                 </Card>
               </TabsContent>
