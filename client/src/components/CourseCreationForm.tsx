@@ -473,14 +473,15 @@ export default function CourseCreationForm({ courseId: propsCourseId }: CourseCr
         
         // Create modules and lessons
         for (const module of modules) {
-          const newModule = await apiRequest('/api/modules', 
+          const moduleResponse = await apiRequest('/api/modules', 
             JSON.stringify({
               title: module.title,
               courseId: newCourseId,
               order: module.order,
             }),
             { method: 'POST' }
-          ) as { id: number };
+          );
+          const newModule = await moduleResponse.json() as { id: number };
           
           // Create lessons for this module
           for (const lesson of module.lessons) {
