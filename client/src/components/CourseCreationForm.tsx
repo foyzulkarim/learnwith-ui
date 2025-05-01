@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Category } from "@shared/schema";
 import { X, Upload, Plus, Trash, Eye } from "lucide-react";
+import LessonEditModal from "./LessonEditModal";
 
 import {
   Form,
@@ -68,6 +69,16 @@ export default function CourseCreationForm() {
     }[];
   }[]>([]);
   const [showPreview, setShowPreview] = useState(false);
+  const [isLessonModalOpen, setIsLessonModalOpen] = useState(false);
+  const [editingLesson, setEditingLesson] = useState<{
+    id?: number;
+    moduleId: number;
+    title: string;
+    videoUrl?: string;
+    content?: string;
+    duration?: string;
+    order: number;
+  } | null>(null);
 
   // Fetch categories
   const { data: categories } = useQuery<Category[]>({
@@ -135,28 +146,22 @@ export default function CourseCreationForm() {
 
   // Add new lesson to a module
   const addLesson = (moduleId: number) => {
-    setModules(
-      modules.map((module) => {
-        if (module.id === moduleId) {
-          const newLessonId = (module.lessons.length + 1) * 1000 + moduleId;
-          return {
-            ...module,
-            lessons: [
-              ...module.lessons,
-              {
-                id: newLessonId,
-                title: `Lesson ${module.lessons.length + 1}`,
-                videoUrl: "",
-                content: "",
-                order: module.lessons.length + 1,
-                duration: "00:00",
-              },
-            ],
-          };
-        }
-        return module;
-      })
-    );
+    // Find the module
+    const module = modules.find(m => m.id === moduleId);
+    if (!module) return;
+    
+    // Set up the lesson model with defaults
+    setEditingLesson({
+      moduleId,
+      title: `Lesson ${module.lessons.length + 1}`,
+      order: module.lessons.length + 1,
+      videoUrl: "",
+      content: "",
+      duration: "00:00"
+    });
+    
+    // Open the modal
+    setIsLessonModalOpen(true);
   };
 
   // Update lesson title
@@ -615,6 +620,7 @@ export default function CourseCreationForm() {
                   </div>
                 ) : (
                   <div className="space-y-4">
+                    {/* Modules Accordion */}
                     {modules.map((module) => (
                       <div key={module.id} className="border rounded-lg">
                         <div className="p-4 bg-slate-50 rounded-t-lg flex items-center justify-between">
@@ -629,6 +635,13 @@ export default function CourseCreationForm() {
                           />
                           <div className="flex items-center space-x-2">
                             <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => addLesson(module.id)}
+                            >
+                              <Plus className="mr-1 h-3 w-3" /> Add Lesson
+                            </Button>
+                            <Button
                               variant="ghost"
                               size="sm"
                               className="text-red-500 hover:text-red-700 hover:bg-red-50"
@@ -638,7 +651,7 @@ export default function CourseCreationForm() {
                             </Button>
                           </div>
                         </div>
-                        <div className="p-4 space-y-2">
+                        <div className="p-4">
                           {module.lessons.length === 0 ? (
                             <div className="text-center py-4 border border-dashed rounded-lg">
                               <p className="text-gray-500 mb-2">
@@ -653,87 +666,60 @@ export default function CourseCreationForm() {
                               </Button>
                             </div>
                           ) : (
-                            <div className="space-y-3">
+                            <div className="divide-y">
                               {module.lessons.map((lesson) => (
                                 <div
                                   key={lesson.id}
-                                  className="border rounded-lg p-3"
+                                  className="py-3 flex items-center justify-between"
                                 >
-                                  <div className="flex items-center justify-between mb-2">
-                                    <input
-                                      type="text"
-                                      value={lesson.title}
-                                      onChange={(e) =>
-                                        updateLessonTitle(
-                                          module.id,
-                                          lesson.id,
-                                          e.target.value
-                                        )
-                                      }
-                                      className="text-base font-medium bg-transparent border-0 focus:outline-none focus:ring-0 w-full"
-                                      placeholder="Lesson Title"
-                                    />
+                                  <div className="flex items-center space-x-2">
+                                    <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 text-xs font-medium">
+                                      {lesson.order}
+                                    </span>
+                                    <span className="font-medium">{lesson.title}</span>
+                                    {lesson.videoUrl && (
+                                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
+                                        Video
+                                      </span>
+                                    )}
+                                    {lesson.duration && (
+                                      <span className="text-xs text-gray-500">
+                                        {lesson.duration}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => {
+                                        setEditingLesson({
+                                          id: lesson.id,
+                                          moduleId: module.id,
+                                          title: lesson.title,
+                                          videoUrl: lesson.videoUrl,
+                                          content: lesson.content,
+                                          duration: lesson.duration,
+                                          order: lesson.order
+                                        });
+                                        setIsLessonModalOpen(true);
+                                      }}
+                                    >
+                                      Edit
+                                    </Button>
                                     <Button
                                       variant="ghost"
                                       size="sm"
                                       className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                                      onClick={() =>
-                                        deleteLesson(module.id, lesson.id)
-                                      }
+                                      onClick={() => deleteLesson(module.id, lesson.id)}
                                     >
                                       <Trash className="h-3 w-3" />
                                     </Button>
-                                  </div>
-                                  <div className="space-y-3">
-                                    <div>
-                                      <label className="text-xs font-medium text-gray-500 mb-1 block">
-                                        Video URL
-                                      </label>
-                                      <input
-                                        type="text"
-                                        value={lesson.videoUrl}
-                                        onChange={(e) =>
-                                          updateLessonVideo(
-                                            module.id,
-                                            lesson.id,
-                                            e.target.value
-                                          )
-                                        }
-                                        className="w-full text-sm p-2 border rounded"
-                                        placeholder="https://example.com/video.mp4"
-                                      />
-                                    </div>
-                                    <div>
-                                      <label className="text-xs font-medium text-gray-500 mb-1 block">
-                                        Lesson Content
-                                      </label>
-                                      <textarea
-                                        value={lesson.content}
-                                        onChange={(e) =>
-                                          updateLessonContent(
-                                            module.id,
-                                            lesson.id,
-                                            e.target.value
-                                          )
-                                        }
-                                        className="w-full text-sm p-2 border rounded h-20"
-                                        placeholder="Enter lesson content or description here..."
-                                      />
-                                    </div>
                                   </div>
                                 </div>
                               ))}
                             </div>
                           )}
-                          <div className="mt-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => addLesson(module.id)}
-                            >
-                              <Plus className="mr-1 h-3 w-3" /> Add Lesson
-                            </Button>
-                          </div>
                         </div>
                       </div>
                     ))}
@@ -746,6 +732,84 @@ export default function CourseCreationForm() {
                 )}
               </CardContent>
             </Card>
+          )}
+          
+          {/* Lesson Edit Modal */}
+          {isLessonModalOpen && editingLesson && (
+            <LessonEditModal
+              isOpen={isLessonModalOpen}
+              onClose={() => {
+                setIsLessonModalOpen(false);
+                setEditingLesson(null);
+              }}
+              lesson={editingLesson}
+              moduleId={editingLesson.moduleId}
+              courseId={parseInt(form.getValues().categoryId)}
+              order={editingLesson.order}
+              onSave={async (lessonData) => {
+                if (editingLesson.id) {
+                  // Update existing lesson
+                  updateLessonTitle(
+                    editingLesson.moduleId,
+                    editingLesson.id,
+                    lessonData.title
+                  );
+                  updateLessonVideo(
+                    editingLesson.moduleId,
+                    editingLesson.id,
+                    lessonData.videoUrl
+                  );
+                  updateLessonContent(
+                    editingLesson.moduleId,
+                    editingLesson.id,
+                    lessonData.content
+                  );
+                  
+                  // Update duration if included
+                  if (lessonData.duration) {
+                    setModules(modules.map(module => {
+                      if (module.id === editingLesson.moduleId) {
+                        return {
+                          ...module,
+                          lessons: module.lessons.map(lesson => {
+                            if (lesson.id === editingLesson.id) {
+                              return {
+                                ...lesson,
+                                duration: lessonData.duration
+                              };
+                            }
+                            return lesson;
+                          })
+                        };
+                      }
+                      return module;
+                    }));
+                  }
+                } else {
+                  // This is a new lesson being added
+                  const newLessonId = Date.now(); // Simple way to get a unique ID
+                  setModules(modules.map(module => {
+                    if (module.id === editingLesson.moduleId) {
+                      return {
+                        ...module,
+                        lessons: [
+                          ...module.lessons,
+                          {
+                            id: newLessonId,
+                            title: lessonData.title,
+                            videoUrl: lessonData.videoUrl || "",
+                            content: lessonData.content || "",
+                            order: editingLesson.order,
+                            duration: lessonData.duration || "00:00"
+                          }
+                        ]
+                      };
+                    }
+                    return module;
+                  }));
+                }
+              }}
+            />
           )}
 
           {/* Preview Tab */}
