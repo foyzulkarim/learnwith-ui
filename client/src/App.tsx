@@ -19,7 +19,8 @@ function Router() {
         <Switch>
           <Route path="/" component={HomePage} />
           <Route path="/courses" component={CoursesPage} />
-          <Route path="/course/:id" component={CoursePlayerPage} />
+          <Route path="/course/:courseId/lesson/:lessonId" component={CoursePlayerPage} />
+          <Route path="/course/:courseId" component={CoursePlayerPage} />
           <Route path="/profile" component={ProfilePage} />
           <Route path="/faq" component={FAQPage} />
           <Route component={NotFound} />

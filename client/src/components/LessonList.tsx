@@ -49,12 +49,15 @@ export default function LessonList({ courseId, currentLessonId }: LessonListProp
   // Loading state for the lesson list
   if (isLoadingModules || isLoadingLessons) {
     return (
-      <div className="bg-background rounded-lg p-6 animate-pulse">
-        <div className="h-6 bg-gray-200 rounded w-1/2 mb-4"></div>
-        <div className="space-y-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="border border-gray-200 rounded-lg overflow-hidden">
-              <div className="bg-white p-4">
+      <div className="bg-background shadow-sm border border-gray-200 rounded-md p-0 animate-pulse">
+        <div className="p-4 border-b border-gray-200">
+          <div className="h-6 bg-gray-200 rounded w-1/2 mb-4"></div>
+        </div>
+        <div className="space-y-0 divide-y divide-gray-200">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="p-4">
+              <div className="flex items-center">
+                <div className="h-4 w-4 bg-gray-200 rounded-full mr-3"></div>
                 <div className="h-4 bg-gray-200 rounded w-3/4"></div>
               </div>
             </div>
@@ -64,27 +67,63 @@ export default function LessonList({ courseId, currentLessonId }: LessonListProp
     );
   }
 
-  // No modules available
+  // If no modules available, show sample content structure based on the Udemy interface
   if (!modules || modules.length === 0) {
-    // Create a placeholder module if none exist
-    const placeholderModule = {
-      id: 0,
-      title: "Course Content",
-      courseId,
-      order: 1
-    };
+    // Create fake modules and lessons following the Udemy format
+    const dummyModules = [
+      {
+        id: 1,
+        title: "Section 1: Getting Started",
+        courseId,
+        order: 1,
+        lessons: [
+          { id: 101, title: "Introduction to the Course", duration: "5min", completed: false },
+          { id: 102, title: "Course Overview", duration: "10min", completed: false },
+          { id: 103, title: "Setting Up Your Environment", duration: "15min", completed: false }
+        ]
+      },
+      {
+        id: 2,
+        title: "Section 2: Core Concepts",
+        courseId,
+        order: 2,
+        lessons: [
+          { id: 201, title: "Understanding the Basics", duration: "12min", completed: false },
+          { id: 202, title: "Key Principles", duration: "18min", completed: false },
+          { id: 203, title: "Practical Applications", duration: "20min", completed: false }
+        ]
+      }
+    ];
 
     return (
-      <div className="bg-background rounded-lg p-6">
-        <h2 className="text-lg font-bold mb-4">Course Content</h2>
-        <div className="text-center py-8 border border-gray-200 rounded-lg">
-          <FileText className="mx-auto h-12 w-12 text-gray-400 mb-3" />
-          <p className="text-gray-500 mb-2">
-            Lessons will appear here when available
-          </p>
-          <p className="text-sm text-gray-400">
-            This course is under development
-          </p>
+      <div className="bg-white shadow-sm border border-gray-200 rounded-md">
+        <div className="p-4 border-b border-gray-200">
+          <h2 className="text-base font-semibold">Course content</h2>
+          <div className="flex justify-between items-center mt-2">
+            <span className="text-sm text-gray-600">6 lessons • 1h 20m total length</span>
+            <button className="text-sm text-primary hover:underline">Expand all sections</button>
+          </div>
+        </div>
+        <div className="divide-y divide-gray-200">
+          {dummyModules.map(module => (
+            <div key={module.id} className="border-0">
+              <div className="p-4 bg-gray-50 hover:bg-gray-100 cursor-pointer flex justify-between items-center">
+                <h3 className="font-medium text-sm">{module.title}</h3>
+                <div className="text-sm text-gray-500">{module.lessons.length} lectures • {module.lessons.length * 10}min</div>
+              </div>
+              <div className="divide-y divide-gray-200">
+                {module.lessons.map(lesson => (
+                  <div key={lesson.id} className="p-4 pl-6 hover:bg-gray-50 flex items-center justify-between">
+                    <div className="flex items-center">
+                      <PlayCircle className="text-primary mr-3 h-4 w-4" />
+                      <span className="text-sm">{lesson.title}</span>
+                    </div>
+                    <span className="text-xs text-gray-500">{lesson.duration}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     );

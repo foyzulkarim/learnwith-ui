@@ -342,7 +342,7 @@ async function seed() {
       }
     ];
 
-    for (const lesson of module1Lessons) {
+    for (const lesson of allLessons) {
       const existingLesson = await db.query.lessons.findFirst({
         where: and(
           eq(schema.lessons.title, lesson.title),
