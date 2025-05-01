@@ -226,7 +226,7 @@ export default function CoursePlayerPage() {
         {/* Top navigation bar */}
         <header className="border-b border-gray-200 py-3 px-4 bg-white flex items-center justify-between">
           <div className="flex items-center">
-            <Link href={`/courses`} className="text-gray-700 hover:text-primary mr-4">
+            <Link href={`/course/${courseId}`} className="text-gray-700 hover:text-primary mr-4">
               <ChevronLeft className="h-6 w-6" />
             </Link>
             <div>
@@ -452,9 +452,9 @@ export default function CoursePlayerPage() {
               <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
               <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
               <Star className="h-5 w-5 fill-yellow-400 text-yellow-400 opacity-60" />
-              <span className="ml-2 text-white">({course.ratingCount || "1,245"} ratings)</span>
+              <span className="ml-2 text-white">(1,245 ratings)</span>
             </div>
-            <span className="text-gray-300 ml-2">{course.totalStudents || "75,141"} students</span>
+            <span className="text-gray-300 ml-2">75,141 students</span>
           </div>
           
           <div className="flex items-center">
