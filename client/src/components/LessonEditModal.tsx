@@ -294,7 +294,13 @@ export default function LessonEditModal({
                           {videoFile?.name || "Video uploaded"}
                         </p>
                         <p className="text-xs text-gray-500">
-                          URL: {form.watch("videoUrl") ? form.watch("videoUrl").substring(0, 25) + "..." : "N/A"}
+                          {(() => {
+                            const videoUrl = form.watch("videoUrl");
+                            if (!videoUrl) return "URL: N/A";
+                            return videoUrl.length > 25 
+                              ? `URL: ${videoUrl.substring(0, 25)}...` 
+                              : `URL: ${videoUrl}`;
+                          })()}
                         </p>
                       </div>
                     </div>

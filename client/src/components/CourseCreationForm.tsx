@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Category } from "@shared/schema";
-import { X, Upload, Plus, Trash, Eye } from "lucide-react";
+import { X, Upload, Plus, Trash, Eye, ChevronDown, ChevronRight } from "lucide-react";
 import LessonEditModal from "./LessonEditModal";
 
 import {
@@ -79,6 +79,7 @@ export default function CourseCreationForm() {
     duration?: string;
     order: number;
   } | null>(null);
+  const [expandedModules, setExpandedModules] = useState<Record<number, boolean>>({});
 
   // Fetch categories
   const { data: categories } = useQuery<Category[]>({
@@ -128,6 +129,20 @@ export default function CourseCreationForm() {
         lessons: [],
       },
     ]);
+    
+    // Auto-expand newly created module
+    setExpandedModules({
+      ...expandedModules,
+      [newModuleId]: true
+    });
+  };
+  
+  // Toggle module expanded state
+  const toggleModuleExpanded = (moduleId: number) => {
+    setExpandedModules({
+      ...expandedModules,
+      [moduleId]: !expandedModules[moduleId]
+    });
   };
 
   // Update module title
@@ -623,21 +638,47 @@ export default function CourseCreationForm() {
                     {/* Modules Accordion */}
                     {modules.map((module) => (
                       <div key={module.id} className="border rounded-lg">
-                        <div className="p-4 bg-slate-50 rounded-t-lg flex items-center justify-between">
-                          <input
-                            type="text"
-                            value={module.title}
-                            onChange={(e) =>
-                              updateModuleTitle(module.id, e.target.value)
+                        <div 
+                          className="p-4 bg-slate-50 rounded-t-lg flex items-center justify-between cursor-pointer"
+                          onClick={(e) => {
+                            // Prevent collapsing when clicking on input or buttons
+                            if (
+                              e.target instanceof HTMLInputElement ||
+                              e.target instanceof HTMLButtonElement ||
+                              (e.target instanceof Element && 
+                                (e.target.closest('button') || e.target.tagName === 'svg' || e.target.tagName === 'path'))
+                            ) {
+                              return;
                             }
-                            className="text-lg font-semibold bg-transparent border-0 focus:outline-none focus:ring-0 w-full"
-                            placeholder="Module Title"
-                          />
+                            toggleModuleExpanded(module.id);
+                          }}
+                        >
+                          <div className="flex items-center flex-1">
+                            {expandedModules[module.id] ? (
+                              <ChevronDown className="h-5 w-5 mr-2 text-gray-500" />
+                            ) : (
+                              <ChevronRight className="h-5 w-5 mr-2 text-gray-500" />
+                            )}
+                            <input
+                              type="text"
+                              value={module.title}
+                              onChange={(e) => updateModuleTitle(module.id, e.target.value)}
+                              className="text-lg font-semibold bg-transparent border-0 focus:outline-none focus:ring-0 flex-1"
+                              placeholder="Module Title"
+                              onClick={(e) => e.stopPropagation()} // Prevent collapse when editing title
+                            />
+                            <div className="text-sm text-gray-500 ml-2">
+                              {module.lessons.length} lesson{module.lessons.length !== 1 ? 's' : ''}
+                            </div>
+                          </div>
                           <div className="flex items-center space-x-2">
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => addLesson(module.id)}
+                              onClick={(e) => {
+                                e.stopPropagation(); // Prevent collapse toggle
+                                addLesson(module.id);
+                              }}
                             >
                               <Plus className="mr-1 h-3 w-3" /> Add Lesson
                             </Button>
@@ -645,82 +686,87 @@ export default function CourseCreationForm() {
                               variant="ghost"
                               size="sm"
                               className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                              onClick={() => deleteModule(module.id)}
+                              onClick={(e) => {
+                                e.stopPropagation(); // Prevent collapse toggle
+                                deleteModule(module.id);
+                              }}
                             >
                               <Trash className="h-4 w-4" />
                             </Button>
                           </div>
                         </div>
-                        <div className="p-4">
-                          {module.lessons.length === 0 ? (
-                            <div className="text-center py-4 border border-dashed rounded-lg">
-                              <p className="text-gray-500 mb-2">
-                                No lessons in this module
-                              </p>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => addLesson(module.id)}
-                              >
-                                <Plus className="mr-1 h-3 w-3" /> Add Lesson
-                              </Button>
-                            </div>
-                          ) : (
-                            <div className="divide-y">
-                              {module.lessons.map((lesson) => (
-                                <div
-                                  key={lesson.id}
-                                  className="py-3 flex items-center justify-between"
+                        {expandedModules[module.id] && (
+                          <div className="p-4">
+                            {module.lessons.length === 0 ? (
+                              <div className="text-center py-4 border border-dashed rounded-lg">
+                                <p className="text-gray-500 mb-2">
+                                  No lessons in this module
+                                </p>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => addLesson(module.id)}
                                 >
-                                  <div className="flex items-center space-x-2">
-                                    <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 text-xs font-medium">
-                                      {lesson.order}
-                                    </span>
-                                    <span className="font-medium">{lesson.title}</span>
-                                    {lesson.videoUrl && (
-                                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
-                                        Video
+                                  <Plus className="mr-1 h-3 w-3" /> Add Lesson
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="divide-y">
+                                {module.lessons.map((lesson) => (
+                                  <div
+                                    key={lesson.id}
+                                    className="py-3 flex items-center justify-between"
+                                  >
+                                    <div className="flex items-center space-x-2">
+                                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 text-xs font-medium">
+                                        {lesson.order}
                                       </span>
-                                    )}
-                                    {lesson.duration && (
-                                      <span className="text-xs text-gray-500">
-                                        {lesson.duration}
-                                      </span>
-                                    )}
+                                      <span className="font-medium">{lesson.title}</span>
+                                      {lesson.videoUrl && (
+                                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded">
+                                          Video
+                                        </span>
+                                      )}
+                                      {lesson.duration && (
+                                        <span className="text-xs text-gray-500">
+                                          {lesson.duration}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => {
+                                          setEditingLesson({
+                                            id: lesson.id,
+                                            moduleId: module.id,
+                                            title: lesson.title,
+                                            videoUrl: lesson.videoUrl,
+                                            content: lesson.content,
+                                            duration: lesson.duration,
+                                            order: lesson.order
+                                          });
+                                          setIsLessonModalOpen(true);
+                                        }}
+                                      >
+                                        Edit
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                        onClick={() => deleteLesson(module.id, lesson.id)}
+                                      >
+                                        <Trash className="h-3 w-3" />
+                                      </Button>
+                                    </div>
                                   </div>
-                                  <div className="flex items-center space-x-2">
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => {
-                                        setEditingLesson({
-                                          id: lesson.id,
-                                          moduleId: module.id,
-                                          title: lesson.title,
-                                          videoUrl: lesson.videoUrl,
-                                          content: lesson.content,
-                                          duration: lesson.duration,
-                                          order: lesson.order
-                                        });
-                                        setIsLessonModalOpen(true);
-                                      }}
-                                    >
-                                      Edit
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                                      onClick={() => deleteLesson(module.id, lesson.id)}
-                                    >
-                                      <Trash className="h-3 w-3" />
-                                    </Button>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     ))}
                     <div className="mt-4">
