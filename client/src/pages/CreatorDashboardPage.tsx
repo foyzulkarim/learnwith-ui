@@ -114,11 +114,16 @@ function CoursesGrid() {
             </div>
             <p className="text-gray-600 mt-2">{course.description}</p>
             <div className="flex flex-wrap gap-2 mt-4">
-              <Link href={`/creator-dashboard/create-course?courseId=${course.id}`}>
-                <button className="text-sm px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100">
-                  Edit
-                </button>
-              </Link>
+              <button 
+                onClick={() => {
+                  // Set active tab to "create" and navigate with the course ID as a parameter
+                  setActiveTab("create");
+                  window.history.pushState(null, "", `/creator-dashboard/create-course?id=${course.id}`);
+                }}
+                className="text-sm px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100"
+              >
+                Edit
+              </button>
               <Link href={`/creator-dashboard/courses/${course.id}/curriculum`}>
                 <button className="text-sm px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100">
                   Curriculum

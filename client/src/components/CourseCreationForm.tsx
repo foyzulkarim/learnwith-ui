@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -55,7 +56,14 @@ type CourseCreationFormProps = {
   courseId?: number;
 };
 
-export default function CourseCreationForm({ courseId }: CourseCreationFormProps = {}) {
+export default function CourseCreationForm({ courseId: propsCourseId }: CourseCreationFormProps = {}) {
+  // Parse course ID from URL parameters if not provided in props
+  const [location] = useLocation();
+  const params = new URLSearchParams(location.split('?')[1]);
+  const urlCourseId = params.get('id') ? parseInt(params.get('id')!, 10) : undefined;
+  
+  // Use courseId from props or URL
+  const courseId = propsCourseId || urlCourseId;
   const isEditMode = !!courseId;
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("details"); // details, curriculum, preview
