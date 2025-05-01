@@ -704,7 +704,7 @@ export default function CourseCreationForm() {
                             </Button>
                           </div>
                         </div>
-                        {expandedModules[module.id] && (
+                        {expandedModules[module.id.toString()] && (
                           <div className="p-4">
                             {module.lessons.length === 0 ? (
                               <div className="text-center py-4 border border-dashed rounded-lg">
