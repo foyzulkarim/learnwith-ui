@@ -1,0 +1,105 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 40% 96.1%;
+    --foreground: 215 25% 27%;
+    
+    --primary: 220 79% 53%;
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 217 91% 60%;
+    --secondary-foreground: 0 0% 100%;
+    
+    --accent: 158 64% 40%;
+    --accent-foreground: 0 0% 100%;
+    
+    --card: 0 0% 100%;
+    --card-foreground: 215 25% 27%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 25% 27%;
+    
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+    
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215 25% 40%;
+    
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    
+    --radius: 0.5rem;
+  }
+  
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    font-family: 'Inter', sans-serif;
+    @apply bg-background text-foreground antialiased;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Inter', sans-serif;
+    @apply font-bold;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary text-white hover:bg-primary/90 inline-flex items-center justify-center rounded-lg px-6 py-3 font-medium transition-colors;
+  }
+  
+  .btn-secondary {
+    @apply bg-transparent text-white border border-white hover:bg-white/10 inline-flex items-center justify-center rounded-lg px-6 py-3 font-medium transition-colors;
+  }
+  
+  .btn-outline {
+    @apply bg-white border border-gray-300 hover:bg-gray-50 text-foreground inline-flex items-center justify-center rounded-lg px-6 py-3 font-medium transition-colors;
+  }
+  
+  .category-pill {
+    @apply px-4 py-2 rounded-full text-sm font-medium transition-colors;
+  }
+  
+  .category-pill-active {
+    @apply bg-primary text-white;
+  }
+  
+  .category-pill-inactive {
+    @apply bg-background text-foreground hover:bg-gray-200;
+  }
+  
+  .progress-bar {
+    @apply w-full bg-gray-200 rounded-full h-2;
+  }
+  
+  .progress-bar-fill {
+    @apply bg-accent h-2 rounded-full;
+  }
+  
+  .course-card {
+    @apply bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow;
+  }
+  
+  .course-card-image {
+    @apply w-full h-48 object-cover;
+  }
+  
+  .lesson-item {
+    @apply flex items-center justify-between p-4;
+  }
+  
+  .lesson-item-active {
+    @apply bg-primary/5 border-l-4 border-primary;
+  }
+  
+  .lesson-item-completed {
+    @apply border-l-4 border-accent;
+  }
+}
