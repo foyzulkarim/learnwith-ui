@@ -17,7 +17,14 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 
 export default function CoursePlayerPage() {
-  const { id: courseIdStr, lessonId: lessonIdStr } = useParams();
+  // Get parameters from URL using the useParams hook from wouter
+  const params = useParams();
+  
+  // Extract courseId from either the /course/:courseId or /course/:courseId/lesson/:lessonId routes
+  const courseIdStr = params.courseId || params.id;
+  const lessonIdStr = params.lessonId;
+  
+  // Parse the IDs ensuring we get valid numbers
   const courseId = parseInt(courseIdStr || "0", 10);
   const [lessonId, setLessonId] = useState(lessonIdStr ? parseInt(lessonIdStr, 10) : undefined);
   const [activeTab, setActiveTab] = useState("overview");
