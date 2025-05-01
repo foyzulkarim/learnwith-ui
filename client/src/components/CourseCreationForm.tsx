@@ -134,7 +134,8 @@ export default function CourseCreationForm({ courseId: propsCourseId }: CourseCr
     queryKey: ["/api/courses", courseId],
     queryFn: async () => {
       if (!courseId) return null as any;
-      return await apiRequest(`/api/courses/${courseId}`) as CourseResponse;
+      const response = await apiRequest(`/api/courses/${courseId}`);
+      return await response.json() as CourseResponse;
     },
     enabled: !!courseId,
   });
@@ -144,7 +145,8 @@ export default function CourseCreationForm({ courseId: propsCourseId }: CourseCr
     queryKey: ["/api/courses", courseId, "modules"],
     queryFn: async () => {
       if (!courseId) return null as any;
-      return await apiRequest(`/api/courses/${courseId}/modules`) as ModuleResponse[];
+      const response = await apiRequest(`/api/courses/${courseId}/modules`);
+      return await response.json() as ModuleResponse[];
     },
     enabled: !!courseId,
   });
@@ -408,14 +410,15 @@ export default function CourseCreationForm({ courseId: propsCourseId }: CourseCr
             );
           } else {
             // Create new module
-            const newModule = await apiRequest('/api/modules', 
+            const moduleResponse = await apiRequest('/api/modules', 
               JSON.stringify({
                 title: module.title,
                 courseId: courseId,
                 order: module.order,
               }),
               { method: 'POST' }
-            ) as { id: number };
+            );
+            const newModule = await moduleResponse.json() as { id: number };
             
             module.id = newModule.id;
           }
@@ -460,12 +463,13 @@ export default function CourseCreationForm({ courseId: propsCourseId }: CourseCr
         });
       } else {
         // Create new course
-        response = await apiRequest('/api/courses', 
+        const courseResponse = await apiRequest('/api/courses', 
           JSON.stringify(coursePayload),
           { method: 'POST' }
-        ) as { id: number };
+        );
         
-        const newCourseId = response.id;
+        const courseData = await courseResponse.json() as { id: number };
+        const newCourseId = courseData.id;
         
         // Create modules and lessons
         for (const module of modules) {

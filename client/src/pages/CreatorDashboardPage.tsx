@@ -42,7 +42,7 @@ interface Course {
 }
 
 // Component to display course grid with fetched data
-function CoursesGrid() {
+function CoursesGrid({ setActiveTab }: { setActiveTab: (tab: string) => void }) {
   // Fetch courses from the API
   const { data: courses, isLoading, error } = useQuery<Course[]>({
     queryKey: ["/api/courses"],
@@ -295,7 +295,7 @@ export default function CreatorDashboardPage() {
                     </Link>
                   </CardHeader>
                   <CardContent>
-                    <CoursesGrid />
+                    <CoursesGrid setActiveTab={setActiveTab} />
                   </CardContent>
                 </Card>
               </TabsContent>
