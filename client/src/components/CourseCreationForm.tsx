@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -6,6 +6,7 @@ import { z } from "zod";
 import { Category } from "@shared/schema";
 import { X, Upload, Plus, Trash, Eye, ChevronDown, ChevronRight } from "lucide-react";
 import LessonEditModal from "./LessonEditModal";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 import {
   Form,
@@ -90,6 +91,55 @@ export default function CourseCreationForm({ courseId }: CourseCreationFormProps
   const { data: categories } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
   });
+  
+  // Define types for API responses
+  interface CourseResponse {
+    id: number;
+    title: string;
+    description: string;
+    thumbnail: string;
+    categoryId: number;
+    difficulty: string;
+    price?: string;
+    featured?: boolean;
+    bestseller?: boolean;
+    isNew?: boolean;
+    published?: boolean;
+  }
+  
+  interface ModuleResponse {
+    id: number;
+    title: string;
+    order: number;
+    lessons: {
+      id: number;
+      title: string;
+      videoUrl: string;
+      content: string;
+      order: number;
+      duration: string;
+    }[];
+  }
+  
+  // Fetch course data if in edit mode
+  const { data: courseData, isLoading: isLoadingCourse } = useQuery<CourseResponse>({
+    queryKey: ["/api/courses", courseId],
+    queryFn: async () => {
+      if (!courseId) return null as any;
+      return await apiRequest(`/api/courses/${courseId}`) as CourseResponse;
+    },
+    enabled: !!courseId,
+  });
+  
+  // Fetch course modules and lessons if in edit mode
+  const { data: courseModules, isLoading: isLoadingModules } = useQuery<ModuleResponse[]>({
+    queryKey: ["/api/courses", courseId, "modules"],
+    queryFn: async () => {
+      if (!courseId) return null as any;
+      return await apiRequest(`/api/courses/${courseId}/modules`) as ModuleResponse[];
+    },
+    enabled: !!courseId,
+  });
 
   // Form setup
   const form = useForm<CourseFormValues>({
@@ -105,6 +155,42 @@ export default function CourseCreationForm({ courseId }: CourseCreationFormProps
       isNew: true,
     },
   });
+  
+  // Update form with course data when in edit mode
+  useEffect(() => {
+    if (isEditMode && courseData) {
+      // Set form values
+      form.reset({
+        title: courseData.title || "",
+        description: courseData.description || "",
+        categoryId: courseData.categoryId ? courseData.categoryId.toString() : "",
+        difficulty: courseData.difficulty || "beginner",
+        price: courseData.price || "",
+        isFeatured: courseData.featured || false,
+        isBestseller: courseData.bestseller || false,
+        isNew: courseData.isNew || false,
+      });
+      
+      // Set thumbnail
+      if (courseData.thumbnail) {
+        setThumbnailUrl(courseData.thumbnail);
+      }
+    }
+  }, [isEditMode, courseData, form]);
+  
+  // Update modules and lessons when in edit mode
+  useEffect(() => {
+    if (isEditMode && courseModules && courseModules.length > 0) {
+      setModules(courseModules);
+      
+      // Expand all modules initially
+      const expandAll: Record<string, boolean> = {};
+      courseModules.forEach(module => {
+        expandAll[module.id.toString()] = true;
+      });
+      setExpandedModules(expandAll);
+    }
+  }, [isEditMode, courseModules]);
 
   // Handle thumbnail upload
   const handleThumbnailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -283,18 +369,148 @@ export default function CourseCreationForm({ courseId }: CourseCreationFormProps
       return;
     }
 
-    // In a real implementation, we would upload the thumbnail and create the course
-    // For this demo, we'll just show a success toast
-    console.log("Course data:", {
-      ...data,
-      thumbnail: thumbnailUrl,
-      modules: modules,
-    });
+    try {
+      // Prepare the course data
+      const coursePayload = {
+        ...data,
+        categoryId: parseInt(data.categoryId),
+        thumbnail: thumbnailUrl,
+      };
 
-    toast({
-      title: "Success",
-      description: "Course created successfully!",
-    });
+      let response;
+      
+      if (isEditMode) {
+        // Update existing course
+        response = await apiRequest(`/api/courses/${courseId}`, 
+          JSON.stringify(coursePayload),
+          { method: 'PATCH' }
+        );
+        
+        // Update modules and lessons
+        for (const module of modules) {
+          if (module.id && module.id > 0) {
+            // Update existing module
+            await apiRequest(`/api/modules/${module.id}`, 
+              JSON.stringify({
+                title: module.title,
+                courseId: courseId,
+                order: module.order,
+              }),
+              { method: 'PATCH' }
+            );
+          } else {
+            // Create new module
+            const newModule = await apiRequest('/api/modules', 
+              JSON.stringify({
+                title: module.title,
+                courseId: courseId,
+                order: module.order,
+              }),
+              { method: 'POST' }
+            ) as { id: number };
+            
+            module.id = newModule.id;
+          }
+          
+          // Handle lessons within the module
+          for (const lesson of module.lessons) {
+            if (lesson.id && lesson.id > 0) {
+              // Update existing lesson
+              await apiRequest(`/api/lessons/${lesson.id}`, 
+                JSON.stringify({
+                  title: lesson.title,
+                  moduleId: module.id,
+                  courseId: courseId,
+                  order: lesson.order,
+                  videoUrl: lesson.videoUrl,
+                  content: lesson.content,
+                  duration: lesson.duration,
+                }),
+                { method: 'PATCH' }
+              );
+            } else {
+              // Create new lesson
+              await apiRequest('/api/lessons', 
+                JSON.stringify({
+                  title: lesson.title,
+                  moduleId: module.id,
+                  courseId: courseId,
+                  order: lesson.order,
+                  videoUrl: lesson.videoUrl,
+                  content: lesson.content,
+                  duration: lesson.duration,
+                }),
+                { method: 'POST' }
+              );
+            }
+          }
+        }
+        
+        toast({
+          title: "Success",
+          description: "Course updated successfully!",
+        });
+      } else {
+        // Create new course
+        response = await apiRequest('/api/courses', 
+          JSON.stringify(coursePayload),
+          { method: 'POST' }
+        ) as { id: number };
+        
+        const newCourseId = response.id;
+        
+        // Create modules and lessons
+        for (const module of modules) {
+          const newModule = await apiRequest('/api/modules', 
+            JSON.stringify({
+              title: module.title,
+              courseId: newCourseId,
+              order: module.order,
+            }),
+            { method: 'POST' }
+          ) as { id: number };
+          
+          // Create lessons for this module
+          for (const lesson of module.lessons) {
+            await apiRequest('/api/lessons', 
+              JSON.stringify({
+                title: lesson.title,
+                moduleId: newModule.id,
+                courseId: newCourseId,
+                order: lesson.order,
+                videoUrl: lesson.videoUrl,
+                content: lesson.content,
+                duration: lesson.duration,
+              }),
+              { method: 'POST' }
+            );
+          }
+        }
+        
+        toast({
+          title: "Success",
+          description: "Course created successfully!",
+        });
+      }
+      
+      // Invalidate queries to refresh the course list
+      queryClient.invalidateQueries({ queryKey: ['/api/courses'] });
+      
+      // If we were editing, also invalidate the specific course data
+      if (isEditMode) {
+        queryClient.invalidateQueries({ queryKey: ['/api/courses', courseId] });
+        queryClient.invalidateQueries({ queryKey: ['/api/courses', courseId, 'modules'] });
+      }
+      
+      // In a real application, we might redirect to the courses page here
+    } catch (error) {
+      console.error("Error saving course:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save course. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Handle save draft
@@ -312,8 +528,32 @@ export default function CourseCreationForm({ courseId }: CourseCreationFormProps
     });
   };
 
+  // Show loading state while fetching course data in edit mode
+  if (isEditMode && (isLoadingCourse || isLoadingModules)) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-center p-8">
+          <div className="text-center">
+            <div className="inline-block w-8 h-8 border-2 border-t-blue-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin mb-4"></div>
+            <p className="text-lg font-medium">Loading course data...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {/* Course Creation/Edit Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+        <h2 className="text-2xl font-bold">{isEditMode ? "Edit Course" : "Create New Course"}</h2>
+        {isEditMode && (
+          <div className="mt-2 sm:mt-0 text-sm text-gray-500">
+            Course ID: {courseId}
+          </div>
+        )}
+      </div>
+      
       {/* Course Creation Tabs */}
       <div className="flex space-x-1 rounded-lg bg-slate-100 p-1">
         <button
