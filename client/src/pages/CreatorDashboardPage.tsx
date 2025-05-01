@@ -19,6 +19,7 @@ import {
   PlusCircle,
   Settings,
 } from "lucide-react";
+import CourseCreationForm from "@/components/CourseCreationForm";
 
 export default function CreatorDashboardPage() {
   const [location] = useLocation();

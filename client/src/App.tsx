@@ -7,6 +7,7 @@ import CoursesPage from "@/pages/CoursesPage";
 import CoursePlayerPage from "@/pages/CoursePlayerPage";
 import ProfilePage from "@/pages/ProfilePage";
 import FAQPage from "@/pages/FAQPage";
+import CreatorDashboardPage from "@/pages/CreatorDashboardPage";
 import NotFound from "@/pages/not-found";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -23,6 +24,8 @@ function Router() {
           <Route path="/course/:courseId" component={CoursePlayerPage} />
           <Route path="/profile" component={ProfilePage} />
           <Route path="/faq" component={FAQPage} />
+          <Route path="/creator-dashboard" component={CreatorDashboardPage} />
+          <Route path="/creator-dashboard/:tab" component={CreatorDashboardPage} />
           <Route component={NotFound} />
         </Switch>
       </main>

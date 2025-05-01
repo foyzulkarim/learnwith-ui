@@ -21,6 +21,36 @@ interface ProgressFilter {
   limit?: number;
 }
 
+interface CourseCreationData {
+  title: string;
+  description: string;
+  thumbnail: string;
+  instructor: string;
+  instructorAvatar?: string;
+  price?: string;
+  rating?: string;
+  categoryId: number;
+  featured?: boolean;
+  bestseller?: boolean;
+  isNew?: boolean;
+}
+
+interface ModuleCreationData {
+  title: string;
+  courseId: number;
+  order: number;
+}
+
+interface LessonCreationData {
+  title: string;
+  moduleId: number;
+  courseId: number;
+  order: number;
+  videoUrl?: string;
+  duration?: string;
+  content?: string;
+}
+
 export const storage = {
   // CATEGORIES
   async getCategories() {
@@ -186,5 +216,152 @@ export const storage = {
     return await db.query.users.findFirst({
       where: eq(users.id, id)
     });
+  },
+
+  // CREATOR DASHBOARD METHODS
+  async getInstructorCourses(instructorName: string) {
+    // For demo, we'll return all courses as if they belong to the logged-in instructor
+    return await db.select().from(courses).orderBy(desc(courses.createdAt));
+  },
+
+  async createCourse(courseData: CourseCreationData) {
+    // Create a new course
+    const [newCourse] = await db
+      .insert(courses)
+      .values({
+        title: courseData.title,
+        description: courseData.description,
+        thumbnail: courseData.thumbnail,
+        instructor: courseData.instructor,
+        instructorAvatar: courseData.instructorAvatar,
+        price: courseData.price,
+        rating: courseData.rating,
+        categoryId: courseData.categoryId,
+        featured: courseData.featured || false,
+        bestseller: courseData.bestseller || false,
+        isNew: courseData.isNew || true,
+        totalLessons: 0,
+        createdAt: new Date(),
+      })
+      .returning();
+      
+    return newCourse;
+  },
+
+  async updateCourse(courseId: number, courseData: Partial<CourseCreationData>) {
+    // Update an existing course
+    const [updatedCourse] = await db
+      .update(courses)
+      .set({
+        ...courseData,
+        // Don't update createdAt
+      })
+      .where(eq(courses.id, courseId))
+      .returning();
+      
+    return updatedCourse;
+  },
+
+  async createModule(moduleData: ModuleCreationData) {
+    // Create a new module
+    const [newModule] = await db
+      .insert(modules)
+      .values({
+        title: moduleData.title,
+        courseId: moduleData.courseId,
+        order: moduleData.order,
+        createdAt: new Date(),
+      })
+      .returning();
+      
+    return newModule;
+  },
+
+  async updateModule(moduleId: number, moduleData: Partial<ModuleCreationData>) {
+    // Update an existing module
+    const [updatedModule] = await db
+      .update(modules)
+      .set({
+        ...moduleData,
+        // Don't update createdAt
+      })
+      .where(eq(modules.id, moduleId))
+      .returning();
+      
+    return updatedModule;
+  },
+
+  async deleteModule(moduleId: number) {
+    // First get lessons to delete
+    const lessonsToDelete = await db.query.lessons.findMany({
+      where: eq(lessons.moduleId, moduleId)
+    });
+    
+    // Delete lessons in this module
+    for (const lesson of lessonsToDelete) {
+      await db.delete(lessons).where(eq(lessons.id, lesson.id));
+    }
+    
+    // Then delete the module
+    await db.delete(modules).where(eq(modules.id, moduleId));
+    
+    return { success: true };
+  },
+
+  async createLesson(lessonData: LessonCreationData) {
+    // Create a new lesson
+    const [newLesson] = await db
+      .insert(lessons)
+      .values({
+        title: lessonData.title,
+        moduleId: lessonData.moduleId,
+        courseId: lessonData.courseId,
+        order: lessonData.order,
+        videoUrl: lessonData.videoUrl,
+        duration: lessonData.duration,
+        content: lessonData.content,
+        completed: false,
+        createdAt: new Date(),
+      })
+      .returning();
+      
+    // Update course totalLessons
+    await db
+      .update(courses)
+      .set({
+        totalLessons: sql`${courses.totalLessons} + 1`
+      })
+      .where(eq(courses.id, lessonData.courseId));
+      
+    return newLesson;
+  },
+
+  async updateLesson(lessonId: number, lessonData: Partial<LessonCreationData>) {
+    // Update an existing lesson
+    const [updatedLesson] = await db
+      .update(lessons)
+      .set({
+        ...lessonData,
+        // Don't update createdAt
+      })
+      .where(eq(lessons.id, lessonId))
+      .returning();
+      
+    return updatedLesson;
+  },
+
+  async deleteLesson(lessonId: number, courseId: number) {
+    // Delete the lesson
+    await db.delete(lessons).where(eq(lessons.id, lessonId));
+    
+    // Update course totalLessons
+    await db
+      .update(courses)
+      .set({
+        totalLessons: sql`${courses.totalLessons} - 1`
+      })
+      .where(eq(courses.id, courseId));
+    
+    return { success: true };
   }
 };
