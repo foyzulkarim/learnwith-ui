@@ -221,11 +221,27 @@ export default function LessonList({ courseId, currentLessonId }: LessonListProp
         ))}
       </Accordion>
       
-      {currentLessonId && (
+      {currentLessonId && lessons && lessons.length > 0 && (
         <div className="mt-6">
-          <Link href={`/course/${courseId}/lesson/${currentLessonId + 1}`} className="block text-center bg-primary hover:bg-primary/90 text-white font-medium rounded-lg px-4 py-3 transition-colors">
-            Next Lesson <span aria-hidden="true">→</span>
-          </Link>
+          {/* Find the next lesson based on order within the modules */}
+          {(() => {
+            // Find current lesson index
+            const currentIndex = lessons.findIndex(lesson => lesson.id === currentLessonId);
+            if (currentIndex >= 0 && currentIndex < lessons.length - 1) {
+              const nextLesson = lessons[currentIndex + 1];
+              return (
+                <Link href={`/course/${courseId}/lesson/${nextLesson.id}`} className="block text-center bg-primary hover:bg-primary/90 text-white font-medium rounded-lg px-4 py-3 transition-colors">
+                  Next Lesson: {nextLesson.title} <span aria-hidden="true">→</span>
+                </Link>
+              );
+            }
+            // If there's no next lesson, show a "Complete Course" button
+            return (
+              <div className="text-center bg-green-600 text-white font-medium rounded-lg px-4 py-3">
+                Course Complete!
+              </div>
+            );
+          })()}
         </div>
       )}
     </div>

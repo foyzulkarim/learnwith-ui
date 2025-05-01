@@ -79,11 +79,11 @@ export default function CoursePlayerPage() {
     },
   });
 
-  // If no lessonId is provided, use the first lesson from the course
+  // Do NOT automatically redirect to the first lesson
+  // Only set lessonId if it's explicitly provided in the URL
   useEffect(() => {
-    if (!lessonId && lessons && lessons.length > 0) {
-      setLessonId(lessons[0].id);
-    }
+    // We've completely removed auto-redirect logic here
+    // The user must explicitly click on a lesson to view it
   }, [lessonId, lessons]);
 
   // Initialize note content when note data loads
@@ -309,9 +309,30 @@ export default function CoursePlayerPage() {
                       
                       <div className="space-y-4">
                         {quizQuestions.map((question, index) => {
-                          // Default quiz options if parsing fails
+                          // Parse options from the options field or use defaults
                           const defaultOptions = ["Option A", "Option B", "Option C", "Option D"];
                           let parsedOptions: string[] = defaultOptions;
+                          
+                          try {
+                            // Handle both string and jsonb types
+                            if (question.options) {
+                              let optionsArray;
+                              
+                              if (typeof question.options === 'string') {
+                                // If it's a string, parse it
+                                optionsArray = JSON.parse(question.options);
+                              } else if (typeof question.options === 'object') {
+                                // If it's already an object (jsonb from database), use directly
+                                optionsArray = question.options;
+                              }
+                              
+                              if (Array.isArray(optionsArray) && optionsArray.length > 0) {
+                                parsedOptions = optionsArray.map(opt => String(opt));
+                              }
+                            }
+                          } catch (e) {
+                            console.error("Error handling quiz options:", e);
+                          }
                           
                           return (
                             <div key={question.id}>
