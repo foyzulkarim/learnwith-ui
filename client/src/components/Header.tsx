@@ -49,6 +49,9 @@ export default function Header() {
             <Link href="/faq" className={`font-medium ${location === '/faq' ? 'text-primary' : 'text-foreground hover:text-primary transition-colors'}`}>
               FAQ
             </Link>
+            <Link href="/creator-dashboard" className={`font-medium ${location.startsWith('/creator-dashboard') ? 'text-primary' : 'text-foreground hover:text-primary transition-colors'}`}>
+              Creator Dashboard
+            </Link>
           </nav>
           
           <div className="flex items-center space-x-4">
@@ -121,6 +124,9 @@ export default function Header() {
               </Link>
               <Link href="/faq" className={`font-medium ${location === '/faq' ? 'text-primary' : 'text-foreground hover:text-primary transition-colors'}`}>
                 FAQ
+              </Link>
+              <Link href="/creator-dashboard" className={`font-medium ${location.startsWith('/creator-dashboard') ? 'text-primary' : 'text-foreground hover:text-primary transition-colors'}`}>
+                Creator Dashboard
               </Link>
             </div>
           </div>
