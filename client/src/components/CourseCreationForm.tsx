@@ -133,15 +133,16 @@ export default function CourseCreationForm() {
     // Auto-expand newly created module
     setExpandedModules({
       ...expandedModules,
-      [newModuleId]: true
+      [newModuleId.toString()]: true
     });
   };
   
   // Toggle module expanded state
   const toggleModuleExpanded = (moduleId: number) => {
+    const moduleIdStr = moduleId.toString();
     setExpandedModules({
       ...expandedModules,
-      [moduleId]: !expandedModules[moduleId]
+      [moduleIdStr]: !expandedModules[moduleIdStr]
     });
   };
 
@@ -338,9 +339,9 @@ export default function CourseCreationForm() {
           }`}
           onClick={() => {
             // Expand all modules for better visibility in preview
-            const expandAll = {};
+            const expandAll: Record<string, boolean> = {};
             modules.forEach(module => {
-              expandAll[module.id] = true;
+              expandAll[module.id.toString()] = true;
             });
             setExpandedModules(expandAll);
             setActiveTab("preview");
@@ -662,7 +663,7 @@ export default function CourseCreationForm() {
                           }}
                         >
                           <div className="flex items-center flex-1">
-                            {expandedModules[module.id] ? (
+                            {expandedModules[module.id.toString()] ? (
                               <ChevronDown className="h-5 w-5 mr-2 text-gray-500" />
                             ) : (
                               <ChevronRight className="h-5 w-5 mr-2 text-gray-500" />
@@ -942,7 +943,7 @@ export default function CourseCreationForm() {
                               onClick={() => toggleModuleExpanded(module.id)}
                             >
                               <div className="flex items-center">
-                                {expandedModules[module.id] ? (
+                                {expandedModules[module.id.toString()] ? (
                                   <ChevronDown className="h-4 w-4 mr-2 text-gray-500" />
                                 ) : (
                                   <ChevronRight className="h-4 w-4 mr-2 text-gray-500" />
@@ -953,7 +954,7 @@ export default function CourseCreationForm() {
                                 {module.lessons.length} lesson{module.lessons.length !== 1 ? 's' : ''}
                               </span>
                             </div>
-                            {expandedModules[module.id] && (
+                            {expandedModules[module.id.toString()] && (
                               <div className="p-3">
                                 {module.lessons.length === 0 ? (
                                   <p className="text-gray-500 italic text-sm">
@@ -1010,9 +1011,9 @@ export default function CourseCreationForm() {
                     setActiveTab("curriculum");
                   } else if (activeTab === "curriculum") {
                     // Before switching to preview, expand all modules for better visibility
-                    const expandAll = {};
+                    const expandAll: Record<string, boolean> = {};
                     modules.forEach(module => {
-                      expandAll[module.id] = true;
+                      expandAll[module.id.toString()] = true;
                     });
                     setExpandedModules(expandAll);
                     setActiveTab("preview");
