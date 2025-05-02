@@ -1,3 +1,4 @@
+import 'dotenv/config'; // Load environment variables from .env file
 import { db } from "./index";
 import * as schema from "@shared/schema";
 import { eq, and } from "drizzle-orm";
