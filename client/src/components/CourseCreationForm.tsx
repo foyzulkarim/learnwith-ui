@@ -59,8 +59,11 @@ type CourseCreationFormProps = {
 export default function CourseCreationForm({ courseId: propsCourseId }: CourseCreationFormProps = {}) {
   // Parse course ID from URL parameters if not provided in props
   const [location] = useLocation();
-  const params = new URLSearchParams(location.split('?')[1]);
+  const urlParamsString = location.includes('?') ? location.split('?')[1] : '';
+  const params = new URLSearchParams(urlParamsString);
   const urlCourseId = params.get('id') ? parseInt(params.get('id')!, 10) : undefined;
+  
+  console.log("URL params:", {location, urlParamsString, urlCourseId});
   
   // Use courseId from props or URL
   const courseId = propsCourseId || urlCourseId;
@@ -133,9 +136,17 @@ export default function CourseCreationForm({ courseId: propsCourseId }: CourseCr
   const { data: courseData, isLoading: isLoadingCourse } = useQuery<CourseResponse>({
     queryKey: ["/api/courses", courseId],
     queryFn: async () => {
+      console.log("Fetching course with ID:", courseId);
       if (!courseId) return null as any;
-      const response = await apiRequest(`/api/courses/${courseId}`);
-      return await response.json() as CourseResponse;
+      try {
+        const response = await apiRequest(`/api/courses/${courseId}`);
+        const data = await response.json() as CourseResponse;
+        console.log("Course data fetched successfully:", data);
+        return data;
+      } catch (error) {
+        console.error("Error fetching course data:", error);
+        throw error;
+      }
     },
     enabled: !!courseId,
   });
@@ -168,7 +179,11 @@ export default function CourseCreationForm({ courseId: propsCourseId }: CourseCr
   
   // Update form with course data when in edit mode
   useEffect(() => {
+    console.log("Course data effect triggered:", { isEditMode, courseData });
+    
     if (isEditMode && courseData) {
+      console.log("Setting form values from course data:", courseData);
+      
       // Set form values
       form.reset({
         title: courseData.title || "",
@@ -557,15 +572,22 @@ export default function CourseCreationForm({ courseId: propsCourseId }: CourseCr
 
   return (
     <div className="space-y-6">
-      {/* Course Creation/Edit Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
-        <h2 className="text-2xl font-bold">{isEditMode ? "Edit Course" : "Create New Course"}</h2>
-        {isEditMode && (
-          <div className="mt-2 sm:mt-0 text-sm text-gray-500">
-            Course ID: {courseId}
-          </div>
-        )}
-      </div>
+      {/* Course Header */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{isEditMode ? "Edit Course" : "Create New Course"}</CardTitle>
+          <CardDescription>
+            {isEditMode 
+              ? "Edit the details of your existing course" 
+              : "Fill in the details to create your new course"}
+          </CardDescription>
+          {isEditMode && (
+            <div className="text-sm text-gray-500 mt-1">
+              Course ID: {courseId}
+            </div>
+          )}
+        </CardHeader>
+      </Card>
       
       {/* Course Creation Tabs */}
       <div className="flex space-x-1 rounded-lg bg-slate-100 p-1">

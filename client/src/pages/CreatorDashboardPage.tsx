@@ -302,13 +302,7 @@ export default function CreatorDashboardPage() {
 
               <TabsContent value="create" className="mt-0">
                 <Card>
-                  <CardHeader>
-                    <CardTitle>Create New Course</CardTitle>
-                    <CardDescription>
-                      Fill in the details to create your new course
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
+                  <CardContent className="p-0">
                     <CourseCreationForm />
                   </CardContent>
                 </Card>
