@@ -1,5 +1,5 @@
 {
-  "include": ["src/**/*", "db/**/*", "server/**/*"],
+  "include": ["src/**/*"],
   "exclude": ["node_modules", "build", "dist", "**/*.test.ts"],
   "compilerOptions": {
     "incremental": true,
@@ -16,10 +16,7 @@
     "baseUrl": ".",
     "types": ["node", "vite/client"],
     "paths": {
-      "@db": ["./db/index.ts"],
-      "@db/*": ["./db/*"],
       "@/*": ["./src/*"],
-      "@shared/*": ["./shared/*"]
     }
   }
 }

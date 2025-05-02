@@ -4,7 +4,7 @@
   "type": "module",
   "license": "MIT",
   "scripts": {
-    "dev": "tsx server/index.ts",
+    "dev": "npm run client",
     "client": "VITE_USE_MOCK_API=true vite --port 3000",
     "client:win": "cross-env VITE_USE_MOCK_API=true vite --port 3000",
     "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
