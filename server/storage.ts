@@ -33,6 +33,10 @@ interface CourseCreationData {
   featured?: boolean;
   bestseller?: boolean;
   isNew?: boolean;
+  status?: string; // 'draft', 'published', 'archived'
+  publishedAt?: Date;
+  studentCount?: number;
+  completionRate?: number;
 }
 
 interface ModuleCreationData {
@@ -240,6 +244,9 @@ export const storage = {
         featured: courseData.featured || false,
         bestseller: courseData.bestseller || false,
         isNew: courseData.isNew || true,
+        status: courseData.status || 'draft',
+        studentCount: courseData.studentCount || 0,
+        completionRate: courseData.completionRate || 0,
         totalLessons: 0,
         createdAt: new Date(),
       })

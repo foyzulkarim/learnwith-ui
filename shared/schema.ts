@@ -38,6 +38,10 @@ export const courses = pgTable("courses", {
   featured: boolean("featured").default(false),
   bestseller: boolean("bestseller").default(false),
   isNew: boolean("is_new").default(false),
+  status: text("status").default("draft").notNull(), // 'draft', 'published', 'archived'
+  publishedAt: timestamp("published_at"),
+  studentCount: integer("student_count").default(0),
+  completionRate: integer("completion_rate").default(0), // percentage
   totalDuration: text("total_duration"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
