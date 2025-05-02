@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { ArrowLeft, ArrowRight, BookOpen, ChevronLeft, Share2, Clock, MessageSquare, ListChecks, 
-         Check, Users, Award, Play, Star, Globe, BarChart, Download } from "lucide-react";
+         Check, Users, Award, Play, Star, Globe, BarChart, Download, Bot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -16,6 +16,7 @@ import { Course, Lesson, QuizQuestion, Note } from "@shared/schema";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import AIAssistant from "@/components/AIAssistant/AIAssistant";
 
 export default function CoursePlayerPage() {
   // Get parameters from URL using the useParams hook from wouter
@@ -31,6 +32,7 @@ export default function CoursePlayerPage() {
   const [activeTab, setActiveTab] = useState("overview");
   const [quizAnswers, setQuizAnswers] = useState<Record<number, string>>({});
   const [noteContent, setNoteContent] = useState("");
+  const [aiOpen, setAiOpen] = useState(false);
   
   // Fetch course details
   const { data: course, isLoading: isLoadingCourse } = useQuery<Course>({
@@ -287,6 +289,12 @@ export default function CoursePlayerPage() {
                       Resources
                     </span>
                   </TabsTrigger>
+                  <TabsTrigger value="ai-assistant" className="px-6 py-3 data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary">
+                    <span className="flex items-center gap-2">
+                      <Bot className="h-4 w-4" />
+                      Ask AI Assistant
+                    </span>
+                  </TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="overview">
@@ -426,6 +434,12 @@ export default function CoursePlayerPage() {
                         <a href="#" className="hover:underline">Reference guide</a>
                       </li>
                     </ul>
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="ai-assistant">
+                  <div className="h-[500px] overflow-hidden">
+                    <AIAssistant lessonTitle={currentLesson?.title} />
                   </div>
                 </TabsContent>
               </Tabs>
