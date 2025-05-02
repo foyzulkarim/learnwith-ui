@@ -26,7 +26,7 @@ export default function RegisterPage() {
 
   return (
     <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-slate-50 dark:bg-slate-900 p-4">
-      <div className="w-full max-w-md fade-in">
+      <div className="w-full max-w-md transition-all">
         <Card className="w-full shadow-lg border-none">
           <CardHeader className="space-y-1 flex flex-col items-center">
             <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center mb-4">
