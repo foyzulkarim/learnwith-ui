@@ -131,7 +131,7 @@ export const mockCourses: Course[] = [
     id: 3,
     title: 'Python for Data Science',
     description: 'Master Python for data analysis and machine learning',
-    thumbnail: 'https://images.unsplash.com/photo-1526379879527-8559ecfcaec0?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1974&q=80',
+    thumbnail: 'https://images.unsplash.com/photo-1580894894513-541e068a3e2b?auto=format&fit=crop&w=1770&q=80',
     instructor: 'David Kim',
     instructorAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
     price: '$49.99',

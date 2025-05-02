@@ -2,7 +2,14 @@ import { enableMockApi, disableMockApi } from './queryClient';
 
 // Configure with environment variable or URL parameter
 const shouldUseMockApi = () => {
-  // Check for environment variable (Vite uses import.meta.env.VITE_* for environment variables)
+  // In production, prefer direct data access over mocked API
+  if (import.meta.env.PROD) {
+    // Only use mock API if explicitly enabled with ?mock=true
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('mock') === 'true';
+  }
+  
+  // In development, check for environment variable (Vite uses import.meta.env.VITE_* for environment variables)
   if (import.meta.env.VITE_USE_MOCK_API === 'true') {
     return true;
   }
@@ -18,6 +25,8 @@ const shouldUseMockApi = () => {
  * To enable:
  * - Set VITE_USE_MOCK_API=true in .env file
  * - OR add ?mock=true to the URL
+ * 
+ * In production, direct data access is preferred by default.
  * 
  * @returns A cleanup function to disable the mock API
  */

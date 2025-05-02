@@ -4,6 +4,7 @@ import ProgressSection from "@/components/ProgressSection";
 import CourseGrid from "@/components/CourseGrid";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
+import { DataTestComponent } from "@/components/DataTestComponent";
 
 export default function HomePage() {
   // Check if user is authenticated
@@ -24,6 +25,14 @@ export default function HomePage() {
       <HeroSection />
       
       {isAuthenticated && <ProgressSection />}
+      
+      {/* Direct data test component */}
+      <section className="py-10 bg-gray-50" id="direct-data-test">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-2xl font-bold mb-6 text-center">Direct Mock Data Test</h2>
+          <DataTestComponent />
+        </div>
+      </section>
       
       <section className="py-10" id="explorer">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
