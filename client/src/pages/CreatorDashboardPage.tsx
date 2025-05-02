@@ -118,7 +118,9 @@ function CoursesGrid({ setActiveTab }: { setActiveTab: (tab: string) => void }) 
                 onClick={() => {
                   // Set active tab to "create" and navigate with the course ID as a parameter
                   setActiveTab("create");
-                  window.history.pushState(null, "", `/creator-dashboard/create-course?id=${course.id}`);
+                  const courseId = course.id;
+                  console.log("Edit course clicked, id:", courseId);
+                  window.history.pushState({courseId}, "", `/creator-dashboard?id=${courseId}`);
                 }}
                 className="text-sm px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100"
               >
@@ -303,7 +305,13 @@ export default function CreatorDashboardPage() {
               <TabsContent value="create" className="mt-0">
                 <Card>
                   <CardContent className="p-0">
-                    <CourseCreationForm />
+                    {/* Get course ID from URL parameters if it exists */}
+                    {(() => {
+                      const urlParams = new URLSearchParams(location.includes('?') ? location.split('?')[1] : '');
+                      const courseId = urlParams.get('id') ? parseInt(urlParams.get('id')!, 10) : undefined;
+                      console.log("Creating CourseCreationForm with courseId:", courseId);
+                      return <CourseCreationForm courseId={courseId} />;
+                    })()}
                   </CardContent>
                 </Card>
               </TabsContent>

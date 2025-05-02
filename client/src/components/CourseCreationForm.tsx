@@ -696,7 +696,7 @@ export default function CourseCreationForm({ courseId: propsCourseId }: CourseCr
                         <FormLabel>Category</FormLabel>
                         <Select
                           onValueChange={field.onChange}
-                          defaultValue={field.value}
+                          value={field.value}
                         >
                           <FormControl>
                             <SelectTrigger>
@@ -731,7 +731,7 @@ export default function CourseCreationForm({ courseId: propsCourseId }: CourseCr
                         <FormLabel>Difficulty Level</FormLabel>
                         <Select
                           onValueChange={field.onChange}
-                          defaultValue={field.value}
+                          value={field.value}
                         >
                           <FormControl>
                             <SelectTrigger>
