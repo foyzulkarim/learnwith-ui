@@ -9,9 +9,12 @@ import ProfilePage from "@/pages/ProfilePage";
 import FAQPage from "@/pages/FAQPage";
 import CreatorDashboardPage from "@/pages/CreatorDashboardPage";
 import CourseStudentsPage from "@/pages/CourseStudentsPage";
+import LoginPage from "@/pages/auth/LoginPage";
+import RegisterPage from "@/pages/auth/RegisterPage";
 import NotFound from "@/pages/not-found";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { AuthProvider } from "@/context/AuthContext";
 
 function Router() {
   return (
@@ -28,6 +31,8 @@ function Router() {
           <Route path="/faq" component={FAQPage} />
           <Route path="/creator-dashboard" component={CreatorDashboardPage} />
           <Route path="/creator-dashboard/:tab" component={CreatorDashboardPage} />
+          <Route path="/login" component={LoginPage} />
+          <Route path="/register" component={RegisterPage} />
           <Route component={NotFound} />
         </Switch>
       </main>
@@ -39,8 +44,10 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router />
-      <Toaster />
+      <AuthProvider>
+        <Router />
+        <Toaster />
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

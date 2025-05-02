@@ -7,13 +7,15 @@
     --background: 210 40% 96.1%;
     --foreground: 215 25% 27%;
     
-    --primary: 220 79% 53%;
+    /* Primary: #3f51b5 (Indigo) */
+    --primary: 231 48% 48%;
     --primary-foreground: 0 0% 100%;
     
-    --secondary: 217 91% 60%;
+    /* Secondary: #f50057 (Pink) */
+    --secondary: 339 100% 48%;
     --secondary-foreground: 0 0% 100%;
     
-    --accent: 158 64% 40%;
+    --accent: 231 48% 55%; /* Slightly lighter primary for accents */
     --accent-foreground: 0 0% 100%;
     
     --card: 0 0% 100%;
@@ -24,7 +26,7 @@
     
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --ring: 231 48% 48%; /* Using primary color for focus rings */
     
     --muted: 210 40% 96.1%;
     --muted-foreground: 215 25% 40%;
@@ -33,6 +35,44 @@
     --destructive-foreground: 210 40% 98%;
     
     --radius: 0.5rem;
+
+    /* Chart colors based on our new palette */
+    --chart-1: 231 48% 48%; /* Primary */
+    --chart-2: 339 100% 48%; /* Secondary */
+    --chart-3: 231 48% 65%; /* Lighter primary */
+    --chart-4: 339 100% 65%; /* Lighter secondary */
+    --chart-5: 262 52% 47%; /* A complementary purple */
+  }
+
+  /* Dark mode */
+  .dark {
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+    
+    --primary: 231 48% 48%;
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 339 100% 48%;
+    --secondary-foreground: 0 0% 100%;
+    
+    --accent: 231 48% 55%;
+    --accent-foreground: 0 0% 100%;
+    
+    --card: 222 47% 15%;
+    --card-foreground: 210 40% 98%;
+    
+    --popover: 222 47% 15%;
+    --popover-foreground: 210 40% 98%;
+    
+    --border: 217 33% 20%;
+    --input: 217 33% 20%;
+    --ring: 231 48% 55%;
+    
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
   }
   
   * {

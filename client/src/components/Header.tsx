@@ -10,14 +10,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { BookOpen, ChevronDown, Menu, Search, User } from "lucide-react";
+import { BookOpen, ChevronDown, Menu, Search, LogIn, UserPlus } from "lucide-react";
 import { useMobile } from "@/hooks/use-mobile";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Header() {
   const [location] = useLocation();
   const isMobile = useMobile();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const { isLoggedIn, user, logout } = useAuth();
+  const [, navigate] = useLocation();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,7 +31,7 @@ export default function Header() {
   };
 
   return (
-    <header className="bg-white shadow-sm sticky top-0 z-50">
+    <header className="bg-white shadow-sm sticky top-0 z-50 dark:bg-slate-900">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4">
           <div className="flex items-center">
@@ -60,35 +63,67 @@ export default function Header() {
               <Input
                 type="text"
                 placeholder="Search courses..."
-                className="w-64 bg-gray-100 text-foreground rounded-full py-2 px-4 pl-10"
+                className="w-64 bg-gray-100 text-foreground rounded-full py-2 px-4 pl-10 dark:bg-slate-800 dark:border-slate-700"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
             </form>
             
-            {/* Profile Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center space-x-2">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=facearea&facepad=2&w=256&h=256&q=80" alt="Profile" />
-                    <AvatarFallback>AM</AvatarFallback>
-                  </Avatar>
-                  <span className="hidden md:inline-block font-medium">Alex Morgan</span>
-                  <ChevronDown className="h-4 w-4" />
+            {isLoggedIn ? (
+              /* Logged In - Profile Dropdown */
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center space-x-2">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={user?.avatar} alt={user?.name} />
+                      <AvatarFallback>{user?.name?.charAt(0) || 'U'}</AvatarFallback>
+                    </Avatar>
+                    <span className="hidden md:inline-block font-medium">{user?.name}</span>
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile" className="cursor-pointer">Your Profile</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem>Settings</DropdownMenuItem>
+                  <DropdownMenuItem>Help Center</DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    className="text-red-600 cursor-pointer"
+                    onClick={() => {
+                      logout();
+                      navigate("/");
+                    }}
+                  >
+                    Sign out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              /* Not Logged In - Auth Buttons */
+              <div className="flex items-center space-x-2">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="hidden md:flex items-center"
+                  onClick={() => navigate("/login")}
+                >
+                  <LogIn className="mr-1 h-4 w-4" />
+                  Login
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem asChild>
-                  <Link href="/profile" className="cursor-pointer">Your Profile</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem>Settings</DropdownMenuItem>
-                <DropdownMenuItem>Help Center</DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-red-600">Sign out</DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                <Button 
+                  variant="default" 
+                  size="sm" 
+                  className="hidden md:flex items-center bg-primary hover:bg-primary/90"
+                  onClick={() => navigate("/register")}
+                >
+                  <UserPlus className="mr-1 h-4 w-4" />
+                  Register
+                </Button>
+              </div>
+            )}
             
             {/* Mobile Menu Button */}
             <Button 
@@ -109,7 +144,7 @@ export default function Header() {
               <Input
                 type="text"
                 placeholder="Search courses..."
-                className="w-full bg-gray-100 text-foreground rounded-full py-2 px-4 pl-10"
+                className="w-full bg-gray-100 text-foreground rounded-full py-2 px-4 pl-10 dark:bg-slate-800 dark:border-slate-700"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -128,6 +163,39 @@ export default function Header() {
               <Link href="/creator-dashboard" className={`font-medium ${location.startsWith('/creator-dashboard') ? 'text-primary' : 'text-foreground hover:text-primary transition-colors'}`}>
                 Creator Dashboard
               </Link>
+              
+              {!isLoggedIn && (
+                <>
+                  <div className="border-t border-gray-200 dark:border-gray-700 my-2 pt-2"></div>
+                  <Link href="/login" className="flex items-center font-medium text-primary">
+                    <LogIn className="mr-2 h-4 w-4" />
+                    Login
+                  </Link>
+                  <Link href="/register" className="flex items-center font-medium text-primary">
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Register
+                  </Link>
+                </>
+              )}
+              
+              {isLoggedIn && (
+                <>
+                  <div className="border-t border-gray-200 dark:border-gray-700 my-2 pt-2"></div>
+                  <Link href="/profile" className="font-medium">
+                    Your Profile
+                  </Link>
+                  <button 
+                    className="text-left font-medium text-red-600"
+                    onClick={() => {
+                      logout();
+                      navigate("/");
+                      setMobileMenuOpen(false);
+                    }}
+                  >
+                    Sign out
+                  </button>
+                </>
+              )}
             </div>
           </div>
         )}
