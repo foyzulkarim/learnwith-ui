@@ -19,14 +19,22 @@ export default defineConfig({
   resolve: {
     alias: {
       "@db": path.resolve(import.meta.dirname, "db"),
-      "@": path.resolve(import.meta.dirname, "client", "src"),
+      "@": path.resolve(import.meta.dirname, "src"),
       "@shared": path.resolve(import.meta.dirname, "shared"),
       "@assets": path.resolve(import.meta.dirname, "attached_assets"),
     },
   },
-  root: path.resolve(import.meta.dirname, "client"),
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
   },
+  server: {
+    port: 3000,
+    proxy: process.env.VITE_USE_MOCK_API !== 'true' ? {
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+      }
+    } : undefined
+  }
 });
