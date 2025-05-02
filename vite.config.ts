@@ -29,4 +29,13 @@ export default defineConfig({
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
   },
+  server: {
+    port: 3000,
+    proxy: process.env.VITE_USE_MOCK_API !== 'true' ? {
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+      }
+    } : undefined
+  }
 });
