@@ -34,7 +34,7 @@ export default function RegisterPage() {
             </div>
             <CardTitle className="text-2xl font-bold text-center">Create an account</CardTitle>
             <CardDescription className="text-center">
-              Join EduHub to start your learning journey
+              Join Foyzul's Academy to start your learning journey
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">

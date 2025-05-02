@@ -9,7 +9,7 @@ export default function Footer() {
           <div>
             <h3 className="text-xl font-bold mb-4 flex items-center">
               <BookOpen className="mr-2" />
-              EduHub
+              Foyzul's Academy
             </h3>
             <p className="text-gray-300 mb-4">
               The modern learning platform designed to help you achieve your educational goals.
@@ -65,7 +65,7 @@ export default function Footer() {
         
         <div className="border-t border-gray-700 mt-10 pt-8 flex flex-col md:flex-row justify-between">
           <p className="text-gray-300 mb-4 md:mb-0">
-            &copy; {new Date().getFullYear()} EduHub. All rights reserved.
+            &copy; {new Date().getFullYear()} Foyzul's Academy. All rights reserved.
           </p>
           <div className="flex flex-wrap space-x-6">
             <a href="#" className="text-gray-300 hover:text-white transition-colors">Privacy Policy</a>

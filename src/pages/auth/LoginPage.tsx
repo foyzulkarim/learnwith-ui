@@ -34,7 +34,7 @@ export default function LoginPage() {
             </div>
             <CardTitle className="text-2xl font-bold text-center">Welcome back</CardTitle>
             <CardDescription className="text-center">
-              Log in to your EduHub account to continue learning
+              Log in to your Foyzul's Academy account to continue learning
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
