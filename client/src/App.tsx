@@ -8,6 +8,7 @@ import CoursePlayerPage from "@/pages/CoursePlayerPage";
 import ProfilePage from "@/pages/ProfilePage";
 import FAQPage from "@/pages/FAQPage";
 import CreatorDashboardPage from "@/pages/CreatorDashboardPage";
+import CourseStudentsPage from "@/pages/CourseStudentsPage";
 import NotFound from "@/pages/not-found";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -22,6 +23,7 @@ function Router() {
           <Route path="/courses" component={CoursesPage} />
           <Route path="/course/:courseId/lesson/:lessonId" component={CoursePlayerPage} />
           <Route path="/course/:courseId" component={CoursePlayerPage} />
+          <Route path="/courses/:courseId/students" component={CourseStudentsPage} />
           <Route path="/profile" component={ProfilePage} />
           <Route path="/faq" component={FAQPage} />
           <Route path="/creator-dashboard" component={CreatorDashboardPage} />

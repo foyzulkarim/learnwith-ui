@@ -130,7 +130,7 @@ function CoursesGrid({ setActiveTab }: { setActiveTab: (tab: string) => void }) 
                 ) : (
                   <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full">Draft</span>
                 )}
-                {course.studentCount > 0 && (
+                {course.studentCount && course.studentCount > 0 && (
                   <span className="text-gray-500">{course.studentCount} students</span>
                 )}
               </div>
@@ -221,7 +221,13 @@ function CoursesGrid({ setActiveTab }: { setActiveTab: (tab: string) => void }) 
               {/* Students button - only visible for published courses */}
               {course.status === 'published' && (
                 <Link href={`/courses/${course.id}/students`}>
-                  <button className="text-sm px-3 py-1 border border-purple-300 text-purple-600 rounded-md hover:bg-purple-50">
+                  <button className="text-sm px-3 py-1 border border-purple-300 text-purple-600 rounded-md hover:bg-purple-50 flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="9" cy="7" r="4"></circle>
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
                     Students
                   </button>
                 </Link>

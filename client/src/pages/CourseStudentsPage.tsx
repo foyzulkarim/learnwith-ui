@@ -38,14 +38,26 @@ interface Student {
 }
 
 export default function CourseStudentsPage() {
-  const [, params] = useParams();
-  const courseId = parseInt(params.courseId, 10);
+  // With wouter, need to use a different approach for typed params
+  const [location, params] = useParams<{ courseId: string }>();
+  const courseId = params?.courseId ? parseInt(params.courseId, 10) : 0;
   const [searchQuery, setSearchQuery] = useState("");
   const [sortField, setSortField] = useState<keyof Student>("name");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
 
+  interface CourseDetails {
+    id: number;
+    title: string;
+    description: string;
+    thumbnail: string;
+    instructor: string;
+    status: string;
+    studentCount?: number;
+    completionRate?: number;
+  }
+  
   // Fetch course details
-  const { data: course, isLoading: isLoadingCourse } = useQuery({
+  const { data: course, isLoading: isLoadingCourse } = useQuery<CourseDetails>({
     queryKey: [`/api/courses/${courseId}`],
   });
 
