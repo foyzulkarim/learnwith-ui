@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useParams } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import {
   Card,
@@ -38,9 +38,10 @@ interface Student {
 }
 
 export default function CourseStudentsPage() {
-  // With wouter, need to use a different approach for typed params
-  const [location, params] = useParams<{ courseId: string }>();
-  const courseId = params?.courseId ? parseInt(params.courseId, 10) : 0;
+  // With wouter, extract courseId from the URL path
+  const [location] = useLocation();
+  const courseIdMatch = location.match(/\/courses\/(\d+)\/students/);
+  const courseId = courseIdMatch ? parseInt(courseIdMatch[1], 10) : 0;
   const [searchQuery, setSearchQuery] = useState("");
   const [sortField, setSortField] = useState<keyof Student>("name");
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");

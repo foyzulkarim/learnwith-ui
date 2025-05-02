@@ -220,7 +220,14 @@ function CoursesGrid({ setActiveTab }: { setActiveTab: (tab: string) => void }) 
               
               {/* Students button - only visible for published courses */}
               {course.status === 'published' && (
-                <Link href={`/courses/${course.id}/students`}>
+                <Link href={`/courses/${course.id}/students`} onClick={(e) => {
+                  // Prevent default so wouter can handle the navigation
+                  e.preventDefault();
+                  // Navigate programmatically
+                  window.history.pushState(null, "", `/courses/${course.id}/students`);
+                  // Force a reload to make sure route is processed properly
+                  window.location.reload();
+                }}>
                   <button className="text-sm px-3 py-1 border border-purple-300 text-purple-600 rounded-md hover:bg-purple-50 flex items-center">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
