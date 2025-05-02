@@ -1,6 +1,41 @@
-node_modules
-dist
-.DS_Store
+# Node.js dependencies
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Build output
+dist/
+build/
+out/
 server/public
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+logs/
+*.log
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Misc
 vite.config.ts.*
 *.tar.gz
+
+# Drizzle
+.drizzle/
+
+# Debug files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
