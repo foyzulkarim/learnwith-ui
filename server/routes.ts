@@ -200,6 +200,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ message: "Internal server error" });
     }
   });
+  
+  // COURSE STUDENTS
+  app.get(`${apiPrefix}/courses/:id/students`, async (req, res) => {
+    try {
+      const courseId = parseInt(req.params.id);
+      
+      // Generate mock student data for the specified course
+      const students = [
+        {
+          id: 1,
+          name: "John Smith",
+          email: "john.smith@example.com",
+          progress: 85,
+          lastActive: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString() // 2 hours ago
+        },
+        {
+          id: 2,
+          name: "Emily Johnson",
+          email: "emily.j@example.com",
+          progress: 62,
+          lastActive: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString() // 1 day ago
+        },
+        {
+          id: 3,
+          name: "Michael Brown",
+          email: "mike.brown@example.com",
+          progress: 45,
+          lastActive: new Date(Date.now() - 1000 * 60 * 60 * 6).toISOString() // 6 hours ago
+        },
+        {
+          id: 4,
+          name: "Sarah Davis",
+          email: "sarah.d@example.com",
+          progress: 92,
+          lastActive: new Date(Date.now() - 1000 * 60 * 30).toISOString() // 30 minutes ago
+        },
+        {
+          id: 5,
+          name: "Alex Wilson",
+          email: "alex.w@example.com",
+          progress: 15,
+          lastActive: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString() // 2 days ago
+        },
+        {
+          id: 6,
+          name: "Jessica Taylor",
+          email: "jessica.t@example.com",
+          progress: 75,
+          lastActive: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString() // 12 hours ago
+        },
+        {
+          id: 7,
+          name: "David Martinez",
+          email: "david.m@example.com",
+          progress: 33,
+          lastActive: new Date(Date.now() - 1000 * 60 * 60 * 18).toISOString() // 18 hours ago
+        }
+      ];
+      
+      return res.json(students);
+    } catch (error) {
+      console.error("Error fetching course students:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
 
   // CREATOR DASHBOARD ROUTES
   
@@ -272,6 +337,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.json(updatedCourse);
     } catch (error) {
       console.error("Error updating course:", error);
+      return res.status(500).json({ message: "Internal server error" });
+    }
+  });
+  
+  // Update course status (publish/unpublish/archive)
+  app.put(`${apiPrefix}/creator/courses/:id/status`, async (req, res) => {
+    try {
+      const courseId = parseInt(req.params.id);
+      const { status } = req.body;
+      
+      // Check if course exists
+      const existingCourse = await storage.getCourseById(courseId);
+      if (!existingCourse) {
+        return res.status(404).json({ message: "Course not found" });
+      }
+      
+      // Validate status
+      if (!status || !['draft', 'published', 'archived'].includes(status)) {
+        return res.status(400).json({ message: "Invalid status value" });
+      }
+      
+      const updateData: any = { status };
+      
+      // If publishing, set publishedAt date
+      if (status === 'published' && (!existingCourse.publishedAt || existingCourse.status !== 'published')) {
+        updateData.publishedAt = new Date();
+      }
+      
+      // Update the course status
+      const updatedCourse = await storage.updateCourse(courseId, updateData);
+      return res.json(updatedCourse);
+    } catch (error) {
+      console.error("Error updating course status:", error);
       return res.status(500).json({ message: "Internal server error" });
     }
   });

@@ -34,8 +34,10 @@ interface Course {
   categoryId: number;
   price?: string;
   rating?: string;
-  published?: boolean;
+  status: string; // 'draft', 'published', 'archived'
+  publishedAt?: string;
   studentCount?: number;
+  completionRate?: number;
   featured?: boolean;
   bestseller?: boolean;
   isNew?: boolean;
@@ -44,9 +46,27 @@ interface Course {
 // Component to display course grid with fetched data
 function CoursesGrid({ setActiveTab }: { setActiveTab: (tab: string) => void }) {
   // Fetch courses from the API
-  const { data: courses, isLoading, error } = useQuery<Course[]>({
+  const { data: courses, isLoading, error, refetch } = useQuery<Course[]>({
     queryKey: ["/api/courses"],
   });
+  
+  // Function to update course status (publish/unpublish/archive)
+  const updateCourseStatus = async (courseId: number, status: 'draft' | 'published' | 'archived') => {
+    try {
+      await fetch(`/api/creator/courses/${courseId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status }),
+      });
+      
+      // Refetch courses to update the UI
+      refetch();
+    } catch (error) {
+      console.error('Error updating course status:', error);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -102,17 +122,45 @@ function CoursesGrid({ setActiveTab }: { setActiveTab: (tab: string) => void }) 
             <div className="flex flex-col md:flex-row md:items-center md:justify-between">
               <h3 className="text-lg font-bold">{course.title}</h3>
               <div className="flex items-center gap-2 text-sm">
-                {course.published ? (
+                {/* Status badges */}
+                {course.status === 'published' ? (
                   <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full">Published</span>
+                ) : course.status === 'archived' ? (
+                  <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full">Archived</span>
                 ) : (
                   <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full">Draft</span>
                 )}
-                {course.studentCount && (
+                {course.studentCount > 0 && (
                   <span className="text-gray-500">{course.studentCount} students</span>
                 )}
               </div>
             </div>
             <p className="text-gray-600 mt-2">{course.description}</p>
+            
+            {/* Show metadata if published */}
+            {course.status === 'published' && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3">
+                <div className="text-gray-500 text-xs flex items-center">
+                  <span className="font-medium">Published:</span>
+                  <span className="ml-1">{course.publishedAt 
+                    ? new Date(course.publishedAt).toLocaleDateString() 
+                    : 'Recently'}</span>
+                </div>
+                <div className="text-gray-500 text-xs flex items-center">
+                  <span className="font-medium">Students:</span>
+                  <span className="ml-1">{course.studentCount || 0}</span>
+                </div>
+                <div className="text-gray-500 text-xs flex items-center">
+                  <span className="font-medium">Completion Rate:</span>
+                  <span className="ml-1">{course.completionRate || 0}%</span>
+                </div>
+                <div className="text-gray-500 text-xs flex items-center">
+                  <span className="font-medium">Rating:</span>
+                  <span className="ml-1">{course.rating || 'No ratings'}</span>
+                </div>
+              </div>
+            )}
+            
             <div className="flex flex-wrap gap-2 mt-4">
               <button 
                 onClick={() => {
@@ -136,14 +184,47 @@ function CoursesGrid({ setActiveTab }: { setActiveTab: (tab: string) => void }) 
                   Preview
                 </button>
               </Link>
-              {course.published ? (
-                <button className="text-sm px-3 py-1 border border-red-300 text-red-600 rounded-md hover:bg-red-50">
+              {/* Status change buttons */}
+              {course.status === 'published' ? (
+                <button 
+                  className="text-sm px-3 py-1 border border-red-300 text-red-600 rounded-md hover:bg-red-50"
+                  onClick={() => updateCourseStatus(course.id, 'draft')}
+                >
                   Unpublish
                 </button>
+              ) : course.status === 'archived' ? (
+                <button 
+                  className="text-sm px-3 py-1 border border-blue-300 text-blue-600 rounded-md hover:bg-blue-50"
+                  onClick={() => updateCourseStatus(course.id, 'draft')}
+                >
+                  Restore
+                </button>
               ) : (
-                <button className="text-sm px-3 py-1 border border-green-300 text-green-600 rounded-md hover:bg-green-50">
+                <button 
+                  className="text-sm px-3 py-1 border border-green-300 text-green-600 rounded-md hover:bg-green-50"
+                  onClick={() => updateCourseStatus(course.id, 'published')}
+                >
                   Publish
                 </button>
+              )}
+              
+              {/* Archive button for published/draft courses */}
+              {course.status !== 'archived' && (
+                <button 
+                  className="text-sm px-3 py-1 border border-gray-300 text-gray-600 rounded-md hover:bg-gray-50"
+                  onClick={() => updateCourseStatus(course.id, 'archived')}
+                >
+                  Archive
+                </button>
+              )}
+              
+              {/* Students button - only visible for published courses */}
+              {course.status === 'published' && (
+                <Link href={`/courses/${course.id}/students`}>
+                  <button className="text-sm px-3 py-1 border border-purple-300 text-purple-600 rounded-md hover:bg-purple-50">
+                    Students
+                  </button>
+                </Link>
               )}
             </div>
           </div>
