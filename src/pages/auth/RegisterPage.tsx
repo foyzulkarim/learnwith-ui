@@ -9,7 +9,7 @@ import AuthButton from "@/components/auth/AuthButton";
 export default function RegisterPage() {
   const { register, isLoading, error, isLoggedIn } = useAuth();
   const [, navigate] = useLocation();
-  const [activeProvider, setActiveProvider] = useState<"google" | "github" | null>(null);
+  const [activeProvider, setActiveProvider] = useState<"google" | null>(null);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -19,9 +19,9 @@ export default function RegisterPage() {
   }, [isLoggedIn, navigate]);
 
   // Handle register with provider
-  const handleRegister = async (provider: "google" | "github") => {
+  const handleRegister = (provider: "google") => {
     setActiveProvider(provider);
-    await register(provider);
+    register(provider);
   };
 
   return (
@@ -65,12 +65,6 @@ export default function RegisterPage() {
                 onClick={() => handleRegister("google")}
                 isLoading={isLoading && activeProvider === "google"}
                 className="mb-2"
-              />
-              
-              <AuthButton
-                provider="github"
-                onClick={() => handleRegister("github")}
-                isLoading={isLoading && activeProvider === "github"}
               />
             </div>
           </CardContent>

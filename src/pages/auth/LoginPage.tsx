@@ -9,7 +9,7 @@ import AuthButton from "@/components/auth/AuthButton";
 export default function LoginPage() {
   const { login, isLoading, error, isLoggedIn } = useAuth();
   const [, navigate] = useLocation();
-  const [activeProvider, setActiveProvider] = useState<"google" | "github" | null>(null);
+  const [activeProvider, setActiveProvider] = useState<"google" | null>(null);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -19,9 +19,9 @@ export default function LoginPage() {
   }, [isLoggedIn, navigate]);
 
   // Handle login with provider
-  const handleLogin = async (provider: "google" | "github") => {
+  const handleLogin = (provider: "google") => {
     setActiveProvider(provider);
-    await login(provider);
+    login(provider);
   };
 
   return (
@@ -50,12 +50,6 @@ export default function LoginPage() {
                 onClick={() => handleLogin("google")}
                 isLoading={isLoading && activeProvider === "google"}
                 className="mb-2"
-              />
-              
-              <AuthButton
-                provider="github"
-                onClick={() => handleLogin("github")}
-                isLoading={isLoading && activeProvider === "github"}
               />
             </div>
           </CardContent>

@@ -15,6 +15,7 @@ import NotFound from "@/pages/not-found";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { AuthProvider } from "@/context/AuthContext";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 function Router() {
   return (
@@ -24,13 +25,33 @@ function Router() {
         <Switch>
           <Route path="/" component={HomePage} />
           <Route path="/courses" component={CoursesPage} />
-          <Route path="/course/:courseId/lesson/:lessonId" component={CoursePlayerPage} />
-          <Route path="/course/:courseId" component={CoursePlayerPage} />
-          <Route path="/courses/:courseId/students" component={CourseStudentsPage} />
-          <Route path="/profile" component={ProfilePage} />
+          
+          {/* Protected routes that require authentication */}
+          <ProtectedRoute path="/course/:courseId/lesson/:lessonId">
+            <CoursePlayerPage />
+          </ProtectedRoute>
+          
+          <ProtectedRoute path="/course/:courseId">
+            <CoursePlayerPage />
+          </ProtectedRoute>
+          
+          <ProtectedRoute path="/courses/:courseId/students">
+            <CourseStudentsPage />
+          </ProtectedRoute>
+          
+          <ProtectedRoute path="/profile">
+            <ProfilePage />
+          </ProtectedRoute>
+          
+          <ProtectedRoute path="/creator-dashboard">
+            <CreatorDashboardPage />
+          </ProtectedRoute>
+          
+          <ProtectedRoute path="/creator-dashboard/:tab">
+            <CreatorDashboardPage />
+          </ProtectedRoute>
+          
           <Route path="/faq" component={FAQPage} />
-          <Route path="/creator-dashboard" component={CreatorDashboardPage} />
-          <Route path="/creator-dashboard/:tab" component={CreatorDashboardPage} />
           <Route path="/login" component={LoginPage} />
           <Route path="/register" component={RegisterPage} />
           <Route component={NotFound} />
