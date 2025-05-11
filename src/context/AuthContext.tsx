@@ -1,11 +1,13 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { api } from '@/lib/api';
+import { useLocation } from 'wouter';
 
 // Define the type for user data
 export interface User {
-  name: string;
+  id: string;
+  name: string | null;
   email: string;
-  avatar: string;
-  provider: 'google' | 'github';
+  avatar?: string;
 }
 
 // Define the shape of the auth context
@@ -14,9 +16,9 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   error: string | null;
-  login: (provider: 'google' | 'github') => Promise<void>;
-  register: (provider: 'google' | 'github') => Promise<void>;
-  logout: () => void;
+  login: (provider: 'google') => void;
+  register: (provider: 'google') => void;
+  logout: () => Promise<void>;
 }
 
 // Create the context with default values
@@ -25,103 +27,86 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   isLoading: false,
   error: null,
-  login: async () => {},
-  register: async () => {},
-  logout: () => {},
+  login: () => {},
+  register: () => {},
+  logout: async () => {},
 });
 
 // Custom hook to use the auth context
 export const useAuth = () => useContext(AuthContext);
 
-// Mock user data for demonstration
-const mockUsers = {
-  google: {
-    name: 'Google User',
-    email: 'user@gmail.com',
-    avatar: 'https://i.pravatar.cc/150?u=google',
-    provider: 'google' as const,
-  },
-  github: {
-    name: 'GitHub User',
-    email: 'user@github.com',
-    avatar: 'https://i.pravatar.cc/150?u=github',
-    provider: 'github' as const,
-  },
-};
-
 // Auth provider component
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true); // Start with loading true to check auth on mount
   const [error, setError] = useState<string | null>(null);
+  const [, navigate] = useLocation();
 
-  // Check if user is logged in on component mount
+  // Check if the URL has error parameters (from OAuth callback)
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-      setIsLoggedIn(true);
+    const url = new URL(window.location.href);
+    const errorParam = url.searchParams.get('error');
+    const errorDescription = url.searchParams.get('error_description');
+
+    if (errorParam) {
+      setError(errorDescription || 'Authentication failed');
+      // Remove the error params from URL to avoid showing the error on page refresh
+      url.searchParams.delete('error');
+      url.searchParams.delete('error_description');
+      window.history.replaceState({}, document.title, url.toString());
     }
   }, []);
 
-  // Login function
-  const login = async (provider: 'google' | 'github') => {
-    setIsLoading(true);
+  // Check auth status on component mount
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      try {
+        const response = await api.getUser();
+        if (response) {
+          setUser(response);
+          setIsLoggedIn(true);
+        }
+      } catch (err) {
+        console.log('Not authenticated');
+        // User is not authenticated - this is not an error
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuthStatus();
+  }, []);
+
+  // Login function - redirects to OAuth provider
+  const login = (provider: 'google') => {
     setError(null);
     
-    try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Set mock user data based on provider
-      const userData = mockUsers[provider];
-      
-      // Save to local storage
-      localStorage.setItem('user', JSON.stringify(userData));
-      
-      // Update state
-      setUser(userData);
-      setIsLoggedIn(true);
-    } catch (err) {
-      setError('Authentication failed. Please try again.');
-      console.error('Login error:', err);
-    } finally {
-      setIsLoading(false);
+    // Redirect to Google OAuth endpoint
+    if (provider === 'google') {
+      window.location.href = api.getGoogleAuthUrl();
     }
   };
 
-  // Register function (similar to login for this demo)
-  const register = async (provider: 'google' | 'github') => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Set mock user data based on provider
-      const userData = mockUsers[provider];
-      
-      // Save to local storage
-      localStorage.setItem('user', JSON.stringify(userData));
-      
-      // Update state
-      setUser(userData);
-      setIsLoggedIn(true);
-    } catch (err) {
-      setError('Registration failed. Please try again.');
-      console.error('Registration error:', err);
-    } finally {
-      setIsLoading(false);
-    }
+  // Register function - same as login for OAuth providers
+  const register = (provider: 'google') => {
+    login(provider);
   };
 
   // Logout function
-  const logout = () => {
-    localStorage.removeItem('user');
-    setUser(null);
-    setIsLoggedIn(false);
+  const logout = async () => {
+    setIsLoading(true);
+    try {
+      await api.logout();
+      setUser(null);
+      setIsLoggedIn(false);
+      navigate('/');
+    } catch (err) {
+      console.error('Logout error:', err);
+      setError('Failed to logout. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Provide the auth context to children components
