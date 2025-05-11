@@ -32,7 +32,7 @@ async function fetcher<T>(
     if (response.status === 401 && endpoint !== '/api/auth/refresh' && endpoint !== '/api/auth/logout') {
       try {
         // Attempt to refresh the token
-        await api.refreshToken();
+        await refreshToken();
         
         // Retry the original request with the new token
         const retryResponse = await fetch(url, fetchOptions);
