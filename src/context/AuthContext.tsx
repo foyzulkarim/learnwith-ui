@@ -8,6 +8,7 @@ export interface User {
   name: string | null;
   email: string;
   avatar?: string;
+  role?: string; // Added role field with optional marker for role-based access control
 }
 
 // Define the shape of the auth context

@@ -52,9 +52,11 @@ export default function Header() {
             <Link href="/faq" className={`font-medium ${location === '/faq' ? 'text-primary' : 'text-foreground hover:text-primary transition-colors'}`}>
               FAQ
             </Link>
-            <Link href="/creator-dashboard" className={`font-medium ${location.startsWith('/creator-dashboard') ? 'text-primary' : 'text-foreground hover:text-primary transition-colors'}`}>
-              Creator Dashboard
-            </Link>
+            {(user?.role === 'creator' || user?.role === 'admin') && (
+              <Link href="/creator-dashboard" className={`font-medium ${location.startsWith('/creator-dashboard') ? 'text-primary' : 'text-foreground hover:text-primary transition-colors'}`}>
+                Creator Dashboard
+              </Link>
+            )}
           </nav>
           
           <div className="flex items-center space-x-4">
@@ -76,7 +78,7 @@ export default function Header() {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="flex items-center space-x-2">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={user?.avatar} alt={user?.name} />
+                      <AvatarImage src={user?.avatar || undefined} alt={user?.name || 'User'} />
                       <AvatarFallback>{user?.name?.charAt(0) || 'U'}</AvatarFallback>
                     </Avatar>
                     <span className="hidden md:inline-block font-medium">{user?.name}</span>
@@ -160,9 +162,11 @@ export default function Header() {
               <Link href="/faq" className={`font-medium ${location === '/faq' ? 'text-primary' : 'text-foreground hover:text-primary transition-colors'}`}>
                 FAQ
               </Link>
-              <Link href="/creator-dashboard" className={`font-medium ${location.startsWith('/creator-dashboard') ? 'text-primary' : 'text-foreground hover:text-primary transition-colors'}`}>
-                Creator Dashboard
-              </Link>
+              {(user?.role === 'creator' || user?.role === 'admin') && (
+                <Link href="/creator-dashboard" className={`font-medium ${location.startsWith('/creator-dashboard') ? 'text-primary' : 'text-foreground hover:text-primary transition-colors'}`}>
+                  Creator Dashboard
+                </Link>
+              )}
               
               {!isLoggedIn && (
                 <>
