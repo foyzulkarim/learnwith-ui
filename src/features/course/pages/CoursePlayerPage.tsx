@@ -10,13 +10,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { queryClient } from "@/lib/queryClient";
 import { apiRequest } from "@/lib/queryClient";
-import VideoPlayer from "@/components/VideoPlayer";
-import LessonList from "@/components/LessonList";
-import { Course, Lesson, QuizQuestion, Note } from "@shared/schema";
+import VideoPlayer from "../components/VideoPlayer";
+import LessonList from "../components/LessonList";
+import AIAssistant from "../../ai-assistant/components/AIAssistant";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import AIAssistant from "@/components/AIAssistant/AIAssistant";
 
 export default function CoursePlayerPage() {
   // Get parameters from URL using the useParams hook from wouter
@@ -35,31 +34,31 @@ export default function CoursePlayerPage() {
   const [aiOpen, setAiOpen] = useState(false);
   
   // Fetch course details
-  const { data: course, isLoading: isLoadingCourse } = useQuery<Course>({
+  const { data: course, isLoading: isLoadingCourse } = useQuery<any>({
     queryKey: [`/api/courses/${courseId}`],
     enabled: !!courseId,
   });
   
   // Fetch current lesson if provided, otherwise fetch first lesson
-  const { data: lessons, isLoading: isLoadingLessons } = useQuery<Lesson[]>({
+  const { data: lessons, isLoading: isLoadingLessons } = useQuery<any[]>({
     queryKey: [`/api/courses/${courseId}/lessons`],
     enabled: !!courseId,
   });
 
   // Get current lesson data
-  const { data: currentLesson } = useQuery<Lesson>({
+  const { data: currentLesson } = useQuery<any>({
     queryKey: [`/api/lessons/${lessonId}`],
     enabled: !!lessonId,
   });
 
   // Get quiz questions for the current lesson
-  const { data: quizQuestions } = useQuery<QuizQuestion[]>({
+  const { data: quizQuestions } = useQuery<any[]>({
     queryKey: [`/api/lessons/${lessonId}/quiz`],
     enabled: !!lessonId,
   });
 
   // Get user note for the current lesson
-  const { data: note } = useQuery<Note>({
+  const { data: note } = useQuery<any>({
     queryKey: [`/api/lessons/${lessonId}/note`],
     enabled: !!lessonId,
   });
@@ -67,7 +66,7 @@ export default function CoursePlayerPage() {
   // Mutation to save note
   const saveNoteMutation = useMutation({
     mutationFn: async (content: string) => {
-      return apiRequest("POST", `/api/lessons/${lessonId}/note`, { content });
+      return apiRequest(`/api/lessons/${lessonId}/note`, { content }, { method: "POST" });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/lessons/${lessonId}/note`] });
@@ -77,7 +76,7 @@ export default function CoursePlayerPage() {
   // Mutation to check quiz answers
   const checkQuizAnswersMutation = useMutation({
     mutationFn: async (answers: Record<number, string>) => {
-      return apiRequest("POST", `/api/lessons/${lessonId}/quiz/check`, { answers });
+      return apiRequest(`/api/lessons/${lessonId}/quiz/check`, { answers }, { method: "POST" });
     },
   });
 

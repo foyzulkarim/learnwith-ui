@@ -7,13 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import CourseGrid from "@/components/CourseGrid";
-import { User } from "@shared/schema";
+import CourseGrid from "../../course/components/CourseGrid";
 
 export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState("courses");
   
-  const { data: user, isLoading: isLoadingUser } = useQuery<User>({
+  const { data: user, isLoading: isLoadingUser } = useQuery<any>({
     queryKey: ["/api/users/profile"],
   });
 

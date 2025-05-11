@@ -2,12 +2,12 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { BookOpen } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
-import AuthButton from "@/components/auth/AuthButton";
+import { BookOpen, CheckCircle } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import AuthButton from "../components/AuthButton";
 
-export default function LoginPage() {
-  const { login, isLoading, error, isLoggedIn } = useAuth();
+export default function RegisterPage() {
+  const { register, isLoading, error, isLoggedIn } = useAuth();
   const [, navigate] = useLocation();
   const [activeProvider, setActiveProvider] = useState<"google" | null>(null);
 
@@ -18,10 +18,10 @@ export default function LoginPage() {
     }
   }, [isLoggedIn, navigate]);
 
-  // Handle login with provider
-  const handleLogin = (provider: "google") => {
+  // Handle register with provider
+  const handleRegister = (provider: "google") => {
     setActiveProvider(provider);
-    login(provider);
+    register(provider);
   };
 
   return (
@@ -32,12 +32,12 @@ export default function LoginPage() {
             <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center mb-4">
               <BookOpen className="h-6 w-6 text-white" />
             </div>
-            <CardTitle className="text-2xl font-bold text-center">Welcome back</CardTitle>
+            <CardTitle className="text-2xl font-bold text-center">Create an account</CardTitle>
             <CardDescription className="text-center">
-              Log in to your Foyzul's Academy account to continue learning
+              Join Foyzul's Academy to start your learning journey
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
             {error && (
               <Alert variant="destructive" className="mb-4">
                 <AlertDescription>{error}</AlertDescription>
@@ -45,9 +45,24 @@ export default function LoginPage() {
             )}
             
             <div className="space-y-2">
+              <div className="space-y-1 mb-3">
+                <div className="text-sm flex items-center text-muted-foreground">
+                  <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
+                  <span>Access to all courses</span>
+                </div>
+                <div className="text-sm flex items-center text-muted-foreground">
+                  <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
+                  <span>Track your learning progress</span>
+                </div>
+                <div className="text-sm flex items-center text-muted-foreground">
+                  <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
+                  <span>Personalized learning experience</span>
+                </div>
+              </div>
+              
               <AuthButton
                 provider="google"
-                onClick={() => handleLogin("google")}
+                onClick={() => handleRegister("google")}
                 isLoading={isLoading && activeProvider === "google"}
                 className="mb-2"
               />
@@ -55,17 +70,20 @@ export default function LoginPage() {
           </CardContent>
           <CardFooter className="flex flex-col space-y-2">
             <div className="text-sm text-center text-muted-foreground mt-2">
-              Don't have an account?{" "}
+              Already have an account?{" "}
               <a 
-                href="/register" 
+                href="/login" 
                 className="text-primary hover:underline"
                 onClick={(e) => {
                   e.preventDefault();
-                  navigate("/register");
+                  navigate("/login");
                 }}
               >
-                Sign up
+                Sign in
               </a>
+            </div>
+            <div className="text-xs text-center text-muted-foreground mt-4">
+              By creating an account, you agree to our Terms of Service and Privacy Policy.
             </div>
           </CardFooter>
         </Card>

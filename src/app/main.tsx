@@ -1,6 +1,6 @@
 import { createRoot } from "react-dom/client";
 import App from "./App";
-import "./index.css";
+import "../index.css";
 
 // Create a visual indicator for direct data access
 const directDataIndicator = document.createElement('div');

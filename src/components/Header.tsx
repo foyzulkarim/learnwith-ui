@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { BookOpen, ChevronDown, Menu, Search, LogIn, UserPlus } from "lucide-react";
 import { useMobile } from "@/hooks/use-mobile";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "../features/auth/context/AuthContext";
 
 export default function Header() {
   const [location] = useLocation();

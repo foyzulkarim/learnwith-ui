@@ -1,4 +1,4 @@
-import { mockCourses } from '../lib/mockData';
+import { mockCourses } from '../../../lib/mockData';
 
 /**
  * A simple test component that directly renders mock data

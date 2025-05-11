@@ -1,10 +1,10 @@
 import { useEffect } from "react";
-import HeroSection from "@/components/HeroSection";
-import ProgressSection from "@/components/ProgressSection";
-import CourseGrid from "@/components/CourseGrid";
+import HeroSection from "../components/HeroSection";
+import ProgressSection from "../components/ProgressSection";
+import CourseGrid from "../../course/components/CourseGrid";
 import { useQuery } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
-import { DataTestComponent } from "@/components/DataTestComponent";
+import { DataTestComponent } from "../components/DataTestComponent";
 
 export default function HomePage() {
   // Check if user is authenticated

@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import CourseGrid from "./CourseGrid";
+import CourseGrid from "../../course/components/CourseGrid";
 
 export default function ProgressSection() {
   const { data: hasInProgressCourses, isLoading } = useQuery<boolean>({

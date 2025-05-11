@@ -21,7 +21,7 @@ import {
   Settings,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import CourseCreationForm from "@/components/CourseCreationForm";
+import CourseCreationForm from "../../course/components/CourseCreationForm";
 
 // Define the course type
 interface Course {

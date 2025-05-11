@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useLocation } from "wouter";
-import CourseGrid from "@/components/CourseGrid";
+import CourseGrid from "../components/CourseGrid";
 import { queryClient } from "@/lib/queryClient";
 
 export default function CoursesPage() {

@@ -1,21 +1,17 @@
 import { Switch, Route } from "wouter";
-import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/toaster";
-import HomePage from "@/pages/HomePage";
-import CoursesPage from "@/pages/CoursesPage";
-import CoursePlayerPage from "@/pages/CoursePlayerPage";
-import ProfilePage from "@/pages/ProfilePage";
-import FAQPage from "@/pages/FAQPage";
-import CreatorDashboardPage from "@/pages/CreatorDashboardPage";
-import CourseStudentsPage from "@/pages/CourseStudentsPage";
-import LoginPage from "@/pages/auth/LoginPage";
-import RegisterPage from "@/pages/auth/RegisterPage";
-import NotFound from "@/pages/not-found";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
-import { AuthProvider } from "@/context/AuthContext";
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import Header from "../components/Header";
+import Footer from "../components/Footer";
+import NotFound from "../components/NotFound";
+import HomePage from "../features/home/pages/HomePage";
+import CoursesPage from "../features/course/pages/CoursesPage";
+import CoursePlayerPage from "../features/course/pages/CoursePlayerPage";
+import CourseStudentsPage from "../features/course/pages/CourseStudentsPage";
+import ProfilePage from "../features/user/pages/ProfilePage";
+import FAQPage from "../features/faq/pages/FAQPage";
+import CreatorDashboardPage from "../features/dashboard/pages/CreatorDashboardPage";
+import LoginPage from "../features/auth/pages/LoginPage";
+import RegisterPage from "../features/auth/pages/RegisterPage";
+import { ProtectedRoute } from "../features/auth/components/ProtectedRoute";
 
 function Router() {
   return (
@@ -25,32 +21,32 @@ function Router() {
         <Switch>
           <Route path="/" component={HomePage} />
           <Route path="/courses" component={CoursesPage} />
-          
+
           {/* Protected routes that require authentication */}
           <ProtectedRoute path="/course/:courseId/lesson/:lessonId">
             <CoursePlayerPage />
           </ProtectedRoute>
-          
+
           <ProtectedRoute path="/course/:courseId">
             <CoursePlayerPage />
           </ProtectedRoute>
-          
+
           <ProtectedRoute path="/courses/:courseId/students">
             <CourseStudentsPage />
           </ProtectedRoute>
-          
+
           <ProtectedRoute path="/profile">
             <ProfilePage />
           </ProtectedRoute>
-          
+
           <ProtectedRoute path="/creator-dashboard">
             <CreatorDashboardPage />
           </ProtectedRoute>
-          
+
           <ProtectedRoute path="/creator-dashboard/:tab">
             <CreatorDashboardPage />
           </ProtectedRoute>
-          
+
           <Route path="/faq" component={FAQPage} />
           <Route path="/login" component={LoginPage} />
           <Route path="/register" component={RegisterPage} />
@@ -62,15 +58,4 @@ function Router() {
   );
 }
 
-function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Router />
-        <Toaster />
-      </AuthProvider>
-    </QueryClientProvider>
-  );
-}
-
-export default App;
+export default Router; 
