@@ -12,6 +12,7 @@ interface ChatTopic {
 
 interface AIAssistantProps {
   lessonTitle?: string; // Optional lesson title to contextualize AI responses
+  disabled?: boolean;
 }
 
 // Simulate AI responses based on keywords
@@ -45,7 +46,7 @@ Would you like me to provide a specific example or code snippet?`;
   return `That's an interesting question. ${lessonContext ? `Based on the lesson "${lessonContext}", ` : ""}I would suggest focusing on understanding the fundamental concepts first, then applying them to practical scenarios. Can you share more details about what you're trying to understand?`;
 };
 
-export default function AIAssistant({ lessonTitle }: AIAssistantProps) {
+export default function AIAssistant({ lessonTitle, disabled = false }: AIAssistantProps) {
   const [topics, setTopics] = useState<ChatTopic[]>([]);
   const [activeTopic, setActiveTopic] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
@@ -168,26 +169,30 @@ export default function AIAssistant({ lessonTitle }: AIAssistantProps) {
           activeTopic={activeTopic} 
           onSelectTopic={handleSelectTopic} 
           onNewChat={handleNewChat} 
+          disabled={disabled}
         />
       </div>
       
       {/* Main chat area */}
       <div className="flex-1">
         {/* Mobile-only top bar with new chat button */}
-        <div className="md:hidden border-b border-gray-200 p-2">
-          <button 
-            onClick={handleNewChat}
-            className="w-full py-2 px-4 bg-primary text-white rounded-md flex items-center justify-center gap-2"
-          >
-            <span>+ New Chat</span>
-          </button>
-        </div>
+        { !disabled && (
+          <div className="md:hidden border-b border-gray-200 p-2">
+            <button 
+              onClick={handleNewChat}
+              className="w-full py-2 px-4 bg-primary text-white rounded-md flex items-center justify-center gap-2"
+            >
+              <span>+ New Chat</span>
+            </button>
+          </div>
+        )}
         
         {activeChat ? (
           <ChatPanel 
             messages={activeChat.messages} 
             onSendMessage={handleSendMessage} 
             isTyping={isTyping}
+            disabled={disabled}
           />
         ) : (
           <div className="h-full flex items-center justify-center text-gray-500">

@@ -4,7 +4,8 @@ import Footer from "../components/Footer";
 import NotFound from "../components/NotFound";
 import HomePage from "../features/home/pages/HomePage";
 import CoursesPage from "../features/course/pages/CoursesPage";
-import CoursePlayerPage from "../features/course/pages/CoursePlayerPage";
+import CourseDetailPage from "../features/course/pages/CourseDetailPage";
+import LessonPlayerPage from "../features/course/pages/LessonPlayerPage";
 import CourseStudentsPage from "../features/course/pages/CourseStudentsPage";
 import ProfilePage from "../features/user/pages/ProfilePage";
 import FAQPage from "../features/faq/pages/FAQPage";
@@ -22,15 +23,16 @@ function Router() {
           <Route path="/" component={HomePage} />
           <Route path="/courses" component={CoursesPage} />
 
-          {/* Protected routes that require authentication */}
-          <ProtectedRoute path="/course/:courseId/lesson/:lessonId">
-            <CoursePlayerPage />
-          </ProtectedRoute>
+          {/* Lesson player and course detail are now public */}
+          <Route path="/course/:courseId/lesson/:lessonId">
+            <LessonPlayerPage />
+          </Route>
 
-          <ProtectedRoute path="/course/:courseId">
-            <CoursePlayerPage />
-          </ProtectedRoute>
+          <Route path="/course/:courseId">
+            <CourseDetailPage />
+          </Route>
 
+          {/* Keep protection for students, profile, dashboard, etc. */}
           <ProtectedRoute path="/courses/:courseId/students">
             <CourseStudentsPage />
           </ProtectedRoute>

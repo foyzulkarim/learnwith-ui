@@ -7,23 +7,23 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Module, Lesson } from "@shared/schema";
 import { CheckCircle2, Lock, PlayCircle, FileText, Video } from "lucide-react";
 
 interface LessonListProps {
   courseId: number;
   currentLessonId?: number;
+  isLocked?: boolean;
 }
 
-export default function LessonList({ courseId, currentLessonId }: LessonListProps) {
+export default function LessonList({ courseId, currentLessonId, isLocked = false }: LessonListProps) {
   const [expandedModules, setExpandedModules] = useState<string[]>([]);
 
   // Fetch course modules and lessons
-  const { data: modules, isLoading: isLoadingModules } = useQuery<Module[]>({
+  const { data: modules, isLoading: isLoadingModules } = useQuery<any[]>({
     queryKey: [`/api/courses/${courseId}/modules`],
   });
 
-  const { data: lessons, isLoading: isLoadingLessons } = useQuery<Lesson[]>({
+  const { data: lessons, isLoading: isLoadingLessons } = useQuery<any[]>({
     queryKey: [`/api/courses/${courseId}/lessons`],
   });
 
@@ -133,7 +133,7 @@ export default function LessonList({ courseId, currentLessonId }: LessonListProp
   const lessonsByModule = modules.reduce((acc, module) => {
     acc[module.id] = lessons?.filter(lesson => lesson.moduleId === module.id) || [];
     return acc;
-  }, {} as Record<number, Lesson[]>);
+  }, {} as Record<number, any[]>);
 
   // Calculate total lessons and course completion
   const totalLessons = lessons?.length || 0;
@@ -175,11 +175,10 @@ export default function LessonList({ courseId, currentLessonId }: LessonListProp
             <AccordionContent className="p-0 border-t border-gray-200">
               {lessonsByModule[module.id]?.length > 0 ? (
                 <ul className="divide-y divide-gray-200">
-                  {lessonsByModule[module.id].map((lesson) => {
+                  {lessonsByModule[module.id].map((lesson: any) => {
                     const isActive = lesson.id === currentLessonId;
                     const isCompleted = lesson.completed;
-                    const isLocked = !isCompleted && lesson.id !== currentLessonId;
-                    
+                    const showLock = isLocked || (!isCompleted && lesson.id !== currentLessonId);
                     return (
                       <li 
                         key={lesson.id}
@@ -189,17 +188,23 @@ export default function LessonList({ courseId, currentLessonId }: LessonListProp
                           ${isCompleted && !isActive ? 'bg-gray-50' : ''}
                         `}
                       >
-                        <Link href={isLocked ? "#" : `/course/${courseId}/lesson/${lesson.id}`}>
+                        <Link href={showLock ? "#" : `/course/${courseId}/lesson/${lesson.id}`}>
                           <div className="flex items-center justify-between cursor-pointer">
                             <div className="flex items-center">
-                              {isLocked ? (
-                                <Lock className="text-gray-400 mr-3 h-5 w-5" />
+                              {showLock ? (
+                                <span className="relative group">
+                                  <Lock className="text-gray-400 mr-3 h-5 w-5" />
+                                  <span className="sr-only">{isLocked ? 'Login to unlock this lesson' : 'Complete previous lessons to unlock'}</span>
+                                  <span className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2 py-1 bg-black text-white text-xs rounded opacity-0 group-hover:opacity-100 pointer-events-none z-10 whitespace-nowrap">
+                                    {isLocked ? 'Login to unlock this lesson' : 'Complete previous lessons to unlock'}
+                                  </span>
+                                </span>
                               ) : isCompleted ? (
                                 <CheckCircle2 className="text-green-500 mr-3 h-5 w-5" />
                               ) : (
                                 <PlayCircle className="text-primary mr-3 h-5 w-5" />
                               )}
-                              <span className={`${isLocked ? "text-gray-500" : "text-gray-800"} ${isActive ? "font-medium" : ""}`}>
+                              <span className={`${showLock ? "text-gray-500" : "text-gray-800"} ${isActive ? "font-medium" : ""}`}>
                                 {lesson.title}
                               </span>
                             </div>

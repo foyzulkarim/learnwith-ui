@@ -6,12 +6,14 @@ interface ChatPanelProps {
   messages: Message[];
   onSendMessage: (content: string) => void;
   isTyping?: boolean;
+  disabled?: boolean;
 }
 
 export default function ChatPanel({ 
   messages, 
   onSendMessage, 
-  isTyping = false 
+  isTyping = false,
+  disabled = false
 }: ChatPanelProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
@@ -60,7 +62,7 @@ export default function ChatPanel({
       <div className="p-4 border-t border-gray-200">
         <ChatInput 
           onSendMessage={onSendMessage} 
-          disabled={isTyping}
+          disabled={isTyping || disabled}
         />
       </div>
     </div>
