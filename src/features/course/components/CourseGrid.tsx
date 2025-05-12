@@ -5,7 +5,27 @@ import CategoryFilter from "./CategoryFilter";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, ArrowDown } from "lucide-react";
-import { Course, Category } from "@shared/schema";
+import { fetcher } from "@/lib/api";
+
+// Inline types for Course and Category
+interface Course {
+  id: number;
+  title: string;
+  thumbnail: string;
+  instructor: string;
+  instructorAvatar?: string;
+  categoryId: number;
+  price?: number;
+  rating?: number;
+  isNew?: boolean;
+  bestseller?: boolean;
+  totalLessons: number;
+}
+
+interface Category {
+  id: number;
+  name: string;
+}
 
 interface CourseGridProps {
   inProgress?: boolean;
@@ -30,23 +50,27 @@ export default function CourseGrid({
   const [selectedCategory, setSelectedCategory] = useState<number | null>(categoryId || null);
   const [currentLimit, setCurrentLimit] = useState(limit || 8);
 
-  // Fetch categories
+  // Fetch categories from real API
   const { data: categories } = useQuery<Category[]>({
     queryKey: ["/api/categories"],
+    queryFn: async () => {
+      return fetcher<Category[]>("/api/categories");
+    },
   });
 
-  // Fetch courses with filtering
+  // Fetch courses with filtering from real API
   const endpoint = inProgress ? "/api/courses/in-progress" : "/api/courses";
   const queryParams = new URLSearchParams();
-  
   if (searchQuery) queryParams.append("search", searchQuery);
   if (selectedCategory) queryParams.append("categoryId", selectedCategory.toString());
   if (currentLimit) queryParams.append("limit", currentLimit.toString());
-
   const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
-  
+
   const { data: courses, isLoading } = useQuery<Course[]>({
-    queryKey: [`${endpoint}${queryString}`],
+    queryKey: [endpoint, searchQuery, selectedCategory, currentLimit],
+    queryFn: async () => {
+      return fetcher<Course[]>(`${endpoint}${queryString}`);
+    },
   });
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -127,8 +151,8 @@ export default function CourseGrid({
                 instructor={course.instructor}
                 instructorAvatar={course.instructorAvatar || undefined}
                 category={categories?.find(c => c.id === course.categoryId)?.name || ""}
-                price={course.price || undefined}
-                rating={course.rating || undefined}
+                price={course.price !== undefined ? course.price.toString() : undefined}
+                rating={course.rating !== undefined ? course.rating.toString() : undefined}
                 isNew={course.isNew}
                 isBestseller={course.bestseller}
                 isInProgress={inProgress}

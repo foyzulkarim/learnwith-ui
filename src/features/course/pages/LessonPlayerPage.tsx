@@ -89,9 +89,9 @@ export default function LessonPlayerPage() {
   }
 
   return (
-    <section className="min-h-screen bg-white flex flex-col">
+    <section className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex flex-col">
       {/* Top navigation bar */}
-      <header className="border-b border-gray-200 py-3 px-4 bg-white flex items-center justify-between">
+      <header className="border-b border-gray-200 py-3 px-4 bg-white flex items-center justify-between shadow-sm sticky top-0 z-30">
         <div className="flex items-center">
           <Link 
             href={`/course/${courseId}`} 
@@ -105,173 +105,181 @@ export default function LessonPlayerPage() {
             <span className="ml-1 text-sm">Back to course</span>
           </Link>
           <div>
-            <h1 className="text-lg font-medium">{course.title}</h1>
+            <h1 className="text-lg font-semibold tracking-tight">{course.title}</h1>
             <div className="flex items-center text-sm text-gray-500">
               <span>{currentLesson?.title}</span>
             </div>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <button className="text-gray-600 hover:text-primary">
+          <button className="text-gray-600 hover:text-primary transition-colors">
             <Share2 className="h-5 w-5" />
           </button>
-          <Progress value={progressPercentage} className="w-24 h-2" />
-          <span className="text-sm text-gray-600">{Math.round(progressPercentage)}%</span>
+          <Progress value={progressPercentage} className="w-24 h-2 rounded-full bg-gray-200" />
+          <span className="text-sm text-gray-600 font-medium">{Math.round(progressPercentage)}%</span>
         </div>
       </header>
       <div className="flex flex-col md:flex-row h-full">
         {/* Main content area */}
-        <div className="md:w-2/3 lg:w-3/4">
+        <div className="md:w-2/3 lg:w-3/4 p-2 md:p-6">
           {/* Video player area */}
-          <div className="bg-black">
+          <div className="bg-black rounded-2xl shadow-lg overflow-hidden mb-6 relative">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10 pointer-events-none" />
             <VideoPlayer 
               videoUrl={currentLesson?.videoUrl || "https://demo-videos.vercel.app/placeholder.mp4"} 
               thumbnailUrl={course.thumbnail}
             />
           </div>
           {/* Lesson details area */}
-          <div className="p-6">
+          <div className="">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="border-b border-gray-200 w-full justify-start mb-6">
-                <TabsTrigger value="overview" className="px-6 py-3 data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary">
+              <TabsList className="border-b border-gray-200 w-full justify-start mb-6 bg-white rounded-t-xl shadow-sm">
+                <TabsTrigger value="overview" className="px-6 py-3 data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary font-medium transition-colors data-[state=active]:bg-primary/10 rounded-t-lg">
                   <span className="flex items-center gap-2">
                     <BookOpen className="h-4 w-4" /> Overview
                   </span>
                 </TabsTrigger>
-                <TabsTrigger value="notes" className="px-6 py-3 data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary">
+                <TabsTrigger value="notes" className="px-6 py-3 data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary font-medium transition-colors data-[state=active]:bg-primary/10 rounded-t-lg">
                   <span className="flex items-center gap-2">
                     <MessageSquare className="h-4 w-4" /> Notes
                   </span>
                 </TabsTrigger>
                 {isLoggedIn && (
-                  <TabsTrigger value="resources" className="px-6 py-3 data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary">
+                  <TabsTrigger value="resources" className="px-6 py-3 data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary font-medium transition-colors data-[state=active]:bg-primary/10 rounded-t-lg">
                     <span className="flex items-center gap-2">
                       <ListChecks className="h-4 w-4" /> Resources
                     </span>
                   </TabsTrigger>
                 )}
-                <TabsTrigger value="ai-assistant" className="px-6 py-3 data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary">
+                <TabsTrigger value="ai-assistant" className="px-6 py-3 data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary font-medium transition-colors data-[state=active]:bg-primary/10 rounded-t-lg">
                   <span className="flex items-center gap-2">
                     <Bot className="h-4 w-4" /> Ask AI Assistant
                   </span>
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="overview">
-                <h2 className="text-xl font-medium mb-4">Current Lesson: {currentLesson?.title}</h2>
-                <div className="text-gray-700 mb-6">
-                  {currentLesson?.content || (
-                    <p>
-                      In this lesson, you'll learn core concepts that are essential for mastering the subject.
-                      Follow along with the video and complete the exercises to reinforce your learning.
-                    </p>
+                <div className="bg-white rounded-xl shadow p-6 mb-8">
+                  <h2 className="text-xl font-semibold mb-4">Current Lesson: {currentLesson?.title}</h2>
+                  <div className="text-gray-700 mb-6 text-base">
+                    {currentLesson?.content || (
+                      <p>
+                        In this lesson, you'll learn core concepts that are essential for mastering the subject.
+                        Follow along with the video and complete the exercises to reinforce your learning.
+                      </p>
+                    )}
+                  </div>
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
+                    <h3 className="font-medium mb-2">Key Takeaways</h3>
+                    <ul className="list-disc pl-5 text-gray-700 space-y-1">
+                      <li>Understanding the fundamental principles</li>
+                      <li>How to apply these concepts in real-world scenarios</li>
+                      <li>Best practices and common pitfalls to avoid</li>
+                      <li>Tips for further learning and practice</li>
+                    </ul>
+                  </div>
+                  {/* Quiz section */}
+                  {quizQuestions && quizQuestions.length > 0 && (
+                    <div className="bg-background rounded-xl p-6 border border-gray-200 mb-6 shadow-sm">
+                      <h3 className="text-lg font-semibold mb-4">Knowledge Check</h3>
+                      <p className="mb-6 text-gray-600">Test your understanding with this quick quiz.</p>
+                      <div className="space-y-6">
+                        {quizQuestions.map((question, index) => {
+                          const defaultOptions = ["Option A", "Option B", "Option C", "Option D"];
+                          let parsedOptions: string[] = defaultOptions;
+                          try {
+                            if (question.options) {
+                              let optionsArray;
+                              if (typeof question.options === 'string') {
+                                optionsArray = JSON.parse(question.options);
+                              } else if (typeof question.options === 'object') {
+                                optionsArray = question.options;
+                              }
+                              if (Array.isArray(optionsArray) && optionsArray.length > 0) {
+                                parsedOptions = optionsArray.map(opt => String(opt));
+                              }
+                            }
+                          } catch (e) {
+                            console.error("Error handling quiz options:", e);
+                          }
+                          return (
+                            <div key={question.id} className="bg-white rounded-lg shadow p-4 mb-2 border border-gray-100 transition-all hover:shadow-md">
+                              <p className="font-medium mb-2 text-gray-900">{index + 1}. {question.question}</p>
+                              <RadioGroup 
+                                value={quizAnswers[question.id] || ""} 
+                                onValueChange={value => setQuizAnswers({ ...quizAnswers, [question.id]: value })}
+                              >
+                                <div className="space-y-2">
+                                  {parsedOptions.map((option, i) => (
+                                    <div key={i} className="flex items-center space-x-2 group transition-all">
+                                      <RadioGroupItem value={option.toString()} id={`q${question.id}-opt${i}`} className="transition-all group-hover:scale-105" />
+                                      <Label htmlFor={`q${question.id}-opt${i}`} className="cursor-pointer transition-colors group-hover:text-primary">{option.toString()}</Label>
+                                    </div>
+                                  ))}
+                                </div>
+                              </RadioGroup>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <Button 
+                        className="mt-6 bg-primary hover:bg-primary/90 transition-colors shadow"
+                        onClick={handleCheckAnswers}
+                        disabled={checkQuizAnswersMutation.isPending || !isLoggedIn}
+                      >
+                        {checkQuizAnswersMutation.isPending ? "Checking..." : "Check Answers"}
+                      </Button>
+                      {!isLoggedIn && <div className="text-xs text-red-500 mt-2">Login to check answers</div>}
+                    </div>
                   )}
                 </div>
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
-                  <h3 className="font-medium mb-2">Key Takeaways</h3>
-                  <ul className="list-disc pl-5 text-gray-700 space-y-1">
-                    <li>Understanding the fundamental principles</li>
-                    <li>How to apply these concepts in real-world scenarios</li>
-                    <li>Best practices and common pitfalls to avoid</li>
-                    <li>Tips for further learning and practice</li>
-                  </ul>
-                </div>
-                {/* Quiz section */}
-                {quizQuestions && quizQuestions.length > 0 && (
-                  <div className="bg-background rounded-lg p-6 border border-gray-200 mb-6">
-                    <h3 className="text-lg font-medium mb-4">Knowledge Check</h3>
-                    <p className="mb-6">Test your understanding with this quick quiz.</p>
-                    <div className="space-y-4">
-                      {quizQuestions.map((question, index) => {
-                        const defaultOptions = ["Option A", "Option B", "Option C", "Option D"];
-                        let parsedOptions: string[] = defaultOptions;
-                        try {
-                          if (question.options) {
-                            let optionsArray;
-                            if (typeof question.options === 'string') {
-                              optionsArray = JSON.parse(question.options);
-                            } else if (typeof question.options === 'object') {
-                              optionsArray = question.options;
-                            }
-                            if (Array.isArray(optionsArray) && optionsArray.length > 0) {
-                              parsedOptions = optionsArray.map(opt => String(opt));
-                            }
-                          }
-                        } catch (e) {
-                          console.error("Error handling quiz options:", e);
-                        }
-                        return (
-                          <div key={question.id}>
-                            <p className="font-medium mb-2">{index + 1}. {question.question}</p>
-                            <RadioGroup 
-                              value={quizAnswers[question.id] || ""} 
-                              onValueChange={value => setQuizAnswers({ ...quizAnswers, [question.id]: value })}
-                            >
-                              <div className="space-y-2">
-                                {parsedOptions.map((option, i) => (
-                                  <div key={i} className="flex items-center space-x-2">
-                                    <RadioGroupItem value={option.toString()} id={`q${question.id}-opt${i}`} />
-                                    <Label htmlFor={`q${question.id}-opt${i}`}>{option.toString()}</Label>
-                                  </div>
-                                ))}
-                              </div>
-                            </RadioGroup>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <Button 
-                      className="mt-6 bg-primary hover:bg-primary/90"
-                      onClick={handleCheckAnswers}
-                      disabled={checkQuizAnswersMutation.isPending || !isLoggedIn}
-                    >
-                      {checkQuizAnswersMutation.isPending ? "Checking..." : "Check Answers"}
-                    </Button>
-                    {!isLoggedIn && <div className="text-xs text-red-500 mt-2">Login to check answers</div>}
-                  </div>
-                )}
               </TabsContent>
               <TabsContent value="notes">
-                <h3 className="text-lg font-medium mb-4">Your Notes</h3>
-                <Textarea 
-                  className="w-full border border-gray-300 rounded-lg p-3 min-h-[200px] focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" 
-                  placeholder="Add your notes for this lesson here..."
-                  value={noteContent}
-                  onChange={e => setNoteContent(e.target.value)}
-                  disabled={!isLoggedIn}
-                />
-                {!isLoggedIn && <div className="text-xs text-red-500 mt-2">Login to take notes</div>}
-                <Button 
-                  variant="secondary" 
-                  className="mt-3 bg-gray-100 hover:bg-gray-200 text-foreground"
-                  onClick={handleSaveNote}
-                  disabled={saveNoteMutation.isPending || !isLoggedIn}
-                >
-                  {saveNoteMutation.isPending ? "Saving..." : "Save Notes"}
-                </Button>
+                <div className="bg-white rounded-xl shadow p-6">
+                  <h3 className="text-lg font-semibold mb-4">Your Notes</h3>
+                  <Textarea 
+                    className="w-full border border-gray-300 rounded-lg p-3 min-h-[200px] focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-base" 
+                    placeholder="Add your notes for this lesson here..."
+                    value={noteContent}
+                    onChange={e => setNoteContent(e.target.value)}
+                    disabled={!isLoggedIn}
+                  />
+                  {!isLoggedIn && <div className="text-xs text-red-500 mt-2">Login to take notes</div>}
+                  <Button 
+                    variant="secondary" 
+                    className="mt-3 bg-gray-100 hover:bg-gray-200 text-foreground flex items-center gap-2 shadow"
+                    onClick={handleSaveNote}
+                    disabled={saveNoteMutation.isPending || !isLoggedIn}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                    {saveNoteMutation.isPending ? "Saving..." : "Save Notes"}
+                  </Button>
+                </div>
               </TabsContent>
               {isLoggedIn && (
                 <TabsContent value="resources">
-                  <h3 className="text-lg font-medium mb-4">Course Resources</h3>
-                  <div className="bg-gray-50 rounded-lg p-5 border border-gray-200">
-                    <p className="text-gray-700 mb-4">
-                      Access additional materials to enhance your learning experience.
-                    </p>
-                    <ul className="space-y-3">
-                      <li className="flex items-center text-primary hover:text-secondary">
-                        <a href="#" className="hover:underline">Course slides (PDF)</a>
-                      </li>
-                      <li className="flex items-center text-primary hover:text-secondary">
-                        <a href="#" className="hover:underline">Exercise files</a>
-                      </li>
-                      <li className="flex items-center text-primary hover:text-secondary">
-                        <a href="#" className="hover:underline">Reference guide</a>
-                      </li>
-                    </ul>
+                  <div className="bg-white rounded-xl shadow p-6">
+                    <h3 className="text-lg font-semibold mb-4">Course Resources</h3>
+                    <div className="bg-gray-50 rounded-lg p-5 border border-gray-200">
+                      <p className="text-gray-700 mb-4">
+                        Access additional materials to enhance your learning experience.
+                      </p>
+                      <ul className="space-y-3">
+                        <li className="flex items-center text-primary hover:text-secondary">
+                          <a href="#" className="hover:underline">Course slides (PDF)</a>
+                        </li>
+                        <li className="flex items-center text-primary hover:text-secondary">
+                          <a href="#" className="hover:underline">Exercise files</a>
+                        </li>
+                        <li className="flex items-center text-primary hover:text-secondary">
+                          <a href="#" className="hover:underline">Reference guide</a>
+                        </li>
+                      </ul>
+                    </div>
                   </div>
                 </TabsContent>
               )}
               <TabsContent value="ai-assistant">
-                <div className="h-[500px] overflow-hidden">
+                <div className="h-[500px] overflow-hidden bg-white rounded-xl shadow p-4">
                   <AIAssistant lessonTitle={currentLesson?.title} disabled={!isLoggedIn} />
                 </div>
                 {!isLoggedIn && <div className="text-xs text-red-500 mt-2">Login to chat with AI</div>}
@@ -280,7 +288,7 @@ export default function LessonPlayerPage() {
           </div>
         </div>
         {/* Sidebar with course content */}
-        <div className="md:w-1/3 lg:w-1/4 border-l border-gray-200">
+        <div className="md:w-1/3 lg:w-1/4 border-l border-gray-200 bg-white/80 sticky top-[64px] h-[calc(100vh-64px)] shadow-inner p-2 md:p-4">
           <LessonList courseId={courseId} currentLessonId={lessonId} isLocked={!isLoggedIn} />
         </div>
       </div>
