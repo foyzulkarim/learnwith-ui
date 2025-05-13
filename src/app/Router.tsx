@@ -24,12 +24,12 @@ function Router() {
           <Route path="/courses" component={CoursesPage} />
 
           {/* Lesson player and course detail are now public */}
-          <Route path="/course/:courseId/lesson/:lessonId">
-            <LessonPlayerPage />
-          </Route>
-
           <Route path="/course/:courseId">
             <CourseDetailPage />
+          </Route>
+
+          <Route path="/course/:courseId/lesson/:lessonId">
+            <LessonPlayerPage />
           </Route>
 
           {/* Keep protection for students, profile, dashboard, etc. */}

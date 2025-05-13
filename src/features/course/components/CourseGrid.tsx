@@ -15,11 +15,14 @@ interface Course {
   instructor: string;
   instructorAvatar?: string;
   categoryId: number;
-  price?: number;
-  rating?: number;
+  price?: string;
+  rating?: string;
   isNew?: boolean;
   bestseller?: boolean;
   totalLessons: number;
+  totalDuration?: string;
+  progress?: number;
+  completedLessons?: number;
 }
 
 interface Category {
@@ -149,15 +152,15 @@ export default function CourseGrid({
                 title={course.title}
                 thumbnail={course.thumbnail}
                 instructor={course.instructor}
-                instructorAvatar={course.instructorAvatar || undefined}
+                instructorAvatar={course.instructorAvatar}
                 category={categories?.find(c => c.id === course.categoryId)?.name || ""}
-                price={course.price !== undefined ? course.price.toString() : undefined}
-                rating={course.rating !== undefined ? course.rating.toString() : undefined}
+                price={course.price}
+                rating={course.rating}
                 isNew={course.isNew}
                 isBestseller={course.bestseller}
                 isInProgress={inProgress}
-                progress={inProgress ? 50 : undefined} // This would come from userProgress in a real app
-                completedLessons={inProgress ? 6 : undefined} // This would come from userProgress
+                progress={course.progress}
+                completedLessons={course.completedLessons}
                 totalLessons={course.totalLessons}
                 remainingTime={inProgress ? "2 hrs" : undefined} // This would be calculated
               />

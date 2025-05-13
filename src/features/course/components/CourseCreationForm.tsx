@@ -98,10 +98,15 @@ export default function CourseCreationForm({ courseId: propsCourseId }: CourseCr
   } | null>(null);
   const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>({});
 
-  // Fetch categories
-  const { data: categories } = useQuery<Category[]>({
-    queryKey: ["/api/categories"],
-  });
+  // Define hardcoded categories
+  const hardcodedCategories = [
+    { id: "1", name: "Web Development" },
+    { id: "2", name: "Data Science" },
+    { id: "3", name: "Mobile Development" },
+    { id: "4", name: "Cybersecurity" },
+    { id: "5", name: "Cloud Computing" },
+  ];
+
   
   // Define types for API responses
   interface CourseResponse {
@@ -368,7 +373,7 @@ export default function CourseCreationForm({ courseId: propsCourseId }: CourseCr
     if (!thumbnailUrl) {
       toast({
         title: "Error",
-        description: "Please upload a course thumbnail image",
+        description: "Please provide a course thumbnail URL",
         variant: "destructive",
       });
       return;
@@ -395,142 +400,142 @@ export default function CourseCreationForm({ courseId: propsCourseId }: CourseCr
     }
 
     try {
-      // Prepare the course data
+      let currentCourseId = courseId; // Existing courseId if in edit mode
+
+      // Prepare the course data (common for create and update)
       const coursePayload = {
         ...data,
         categoryId: parseInt(data.categoryId),
-        thumbnail: thumbnailUrl,
+        thumbnail: thumbnailUrl, // Directly from state, now a URL
+        instructor: "Default Instructor", // TODO: Consider making this dynamic
+        totalLessons: modules.reduce((total, module) => total + module.lessons.length, 0),
+        featured: data.isFeatured,
+        bestseller: data.isBestseller,
+        isNew: data.isNew,
+        // published: false, // Or handle based on "Publish Course" vs "Save Draft" logic if needed
       };
 
-      let response;
-      
-      if (isEditMode) {
-        // Update existing course
-        response = await apiRequest(`/api/courses/${courseId}`, 
+      console.log("Submitting course data:", coursePayload);
+
+      // Step 1: Create or Update Course
+      if (isEditMode && currentCourseId) {
+        console.log(`Updating course ${currentCourseId}`);
+        await apiRequest(`/api/courses/${currentCourseId}`, 
           JSON.stringify(coursePayload),
           { method: 'PATCH' }
         );
-        
-        // Update modules and lessons
-        for (const module of modules) {
-          if (module.id && module.id > 0) {
-            // Update existing module
-            await apiRequest(`/api/modules/${module.id}`, 
-              JSON.stringify({
-                title: module.title,
-                courseId: courseId,
-                order: module.order,
-              }),
-              { method: 'PATCH' }
-            );
-          } else {
-            // Create new module
-            const moduleResponse = await apiRequest('/api/modules', 
-              JSON.stringify({
-                title: module.title,
-                courseId: courseId,
-                order: module.order,
-              }),
-              { method: 'POST' }
-            );
-            const newModule = await moduleResponse.json() as { id: number };
-            
-            module.id = newModule.id;
-          }
-          
-          // Handle lessons within the module
-          for (const lesson of module.lessons) {
-            if (lesson.id && lesson.id > 0) {
-              // Update existing lesson
-              await apiRequest(`/api/lessons/${lesson.id}`, 
-                JSON.stringify({
-                  title: lesson.title,
-                  moduleId: module.id,
-                  courseId: courseId,
-                  order: lesson.order,
-                  videoUrl: lesson.videoUrl,
-                  content: lesson.content,
-                  duration: lesson.duration,
-                }),
-                { method: 'PATCH' }
-              );
-            } else {
-              // Create new lesson
-              await apiRequest('/api/lessons', 
-                JSON.stringify({
-                  title: lesson.title,
-                  moduleId: module.id,
-                  courseId: courseId,
-                  order: lesson.order,
-                  videoUrl: lesson.videoUrl,
-                  content: lesson.content,
-                  duration: lesson.duration,
-                }),
-                { method: 'POST' }
-              );
-            }
-          }
-        }
-        
-        toast({
-          title: "Success",
-          description: "Course updated successfully!",
-        });
       } else {
-        // Create new course
+        console.log("Creating new course");
         const courseResponse = await apiRequest('/api/courses', 
           JSON.stringify(coursePayload),
           { method: 'POST' }
         );
-        
-        const courseData = await courseResponse.json() as { id: number };
-        const newCourseId = courseData.id;
-        
-        // Create modules and lessons
-        for (const module of modules) {
+        const newCourseData = await courseResponse.json() as { id: number };
+        currentCourseId = newCourseData.id;
+        console.log("New course created with ID:", currentCourseId);
+      }
+
+      if (!currentCourseId) {
+        toast({ title: "Error", description: "Failed to get course ID after create/update.", variant: "destructive" });
+        return;
+      }
+
+      // Step 2: Process Modules and their Lessons
+      const processedModules = []; // To store modules with updated IDs and lessons
+
+      for (const moduleState of modules) { // Use moduleState to avoid conflict with 'module' keyword
+        let currentModuleId = moduleState.id;
+        const modulePayload = {
+          title: moduleState.title,
+          courseId: currentCourseId,
+          order: moduleState.order,
+        };
+
+        // Create or Update Module
+        // Check if module ID is temporary (e.g., timestamp used for new modules client-side) or from DB
+        const isExistingModule = moduleState.id && typeof moduleState.id === 'number' && moduleState.id > 0;
+
+
+        if (isEditMode && isExistingModule) { 
+          console.log(`Updating module ${moduleState.id}`);
+          await apiRequest(`/api/modules/${moduleState.id}`, 
+            JSON.stringify(modulePayload),
+            { method: 'PATCH' }
+          );
+        } else { // New module (either in create mode, or newly added in edit mode without a persistent ID yet)
+          console.log(`Creating new module for course ${currentCourseId}`);
           const moduleResponse = await apiRequest('/api/modules', 
-            JSON.stringify({
-              title: module.title,
-              courseId: newCourseId,
-              order: module.order,
-            }),
+            JSON.stringify(modulePayload),
             { method: 'POST' }
           );
-          const newModule = await moduleResponse.json() as { id: number };
-          
-          // Create lessons for this module
-          for (const lesson of module.lessons) {
-            await apiRequest('/api/lessons', 
-              JSON.stringify({
-                title: lesson.title,
-                moduleId: newModule.id,
-                courseId: newCourseId,
-                order: lesson.order,
-                videoUrl: lesson.videoUrl,
-                content: lesson.content,
-                duration: lesson.duration,
-              }),
-              { method: 'POST' }
-            );
-          }
+          const newModuleData = await moduleResponse.json() as { id: number };
+          currentModuleId = newModuleData.id; // Update currentModuleId with the ID from backend
+          console.log(`New module created/processed with ID: ${currentModuleId}`);
+        }
+
+        if (!currentModuleId) {
+          toast({ title: "Error", description: `Failed to save module "${moduleState.title}".`, variant: "destructive" });
+          continue; 
         }
         
-        toast({
-          title: "Success",
-          description: "Course created successfully!",
-        });
+        const processedLessons = [];
+        for (const lessonState of moduleState.lessons) { // Use lessonState
+          const lessonPayload = {
+            title: lessonState.title,
+            moduleId: currentModuleId, // Use the definitive currentModuleId
+            courseId: currentCourseId, 
+            order: lessonState.order,
+            videoUrl: lessonState.videoUrl, 
+            content: lessonState.content,
+            duration: lessonState.duration,
+          };
+
+          const isExistingLesson = lessonState.id && typeof lessonState.id === 'number' && lessonState.id > 0;
+
+          if (isEditMode && isExistingLesson) { 
+            console.log(`Updating lesson ${lessonState.id}`);
+            await apiRequest(`/api/lessons/${lessonState.id}`, 
+              JSON.stringify(lessonPayload),
+              { method: 'PATCH' }
+            );
+            processedLessons.push(lessonState); // Keep existing lesson data (ID is preserved)
+          } else { // New lesson
+            console.log(`Creating new lesson for module ${currentModuleId}`);
+            const lessonResponse = await apiRequest('/api/lessons', 
+              JSON.stringify(lessonPayload),
+              { method: 'POST' }
+            );
+            const newLessonData = await lessonResponse.json() as { id: number }; 
+            processedLessons.push({ ...lessonState, id: newLessonData.id }); // Add new lesson with ID from backend
+            console.log(`New lesson created with ID: ${newLessonData.id}`);
+          }
+        }
+        // Add the processed module (with its new/existing ID and processed lessons)
+        processedModules.push({ ...moduleState, id: currentModuleId, lessons: processedLessons });
       }
       
-      // Invalidate queries to refresh the course list
+      setModules(processedModules); // Update local state with new IDs from backend
+
+      toast({
+        title: "Success",
+        description: `Course ${isEditMode ? 'updated' : 'created'} successfully!`,
+      });
+      
       queryClient.invalidateQueries({ queryKey: ['/api/courses'] });
-      
-      // If we were editing, also invalidate the specific course data
-      if (isEditMode) {
-        queryClient.invalidateQueries({ queryKey: ['/api/courses', courseId] });
-        queryClient.invalidateQueries({ queryKey: ['/api/courses', courseId, 'modules'] });
+      if (currentCourseId) { 
+        queryClient.invalidateQueries({ queryKey: ['/api/courses', currentCourseId] });
+        queryClient.invalidateQueries({ queryKey: ['/api/courses', currentCourseId, 'modules'] });
       }
       
-      // In a real application, we might redirect to the courses page here
+      // if (!isEditMode) { // Optionally reset form only on create
+      //   form.reset(); 
+      //   setThumbnailUrl("");
+      //   setModules([]); // Clear modules and lessons
+      //   setExpandedModules({});
+      //   setActiveTab("details");
+      // }
+      // Consider navigation: setLocation(`/admin/course/${currentCourseId}`); 
+
     } catch (error) {
       console.error("Error saving course:", error);
       toast({
@@ -542,18 +547,177 @@ export default function CourseCreationForm({ courseId: propsCourseId }: CourseCr
   };
 
   // Handle save draft
-  const saveDraft = () => {
+  const saveDraft = async () => {
     const data = form.getValues();
-    console.log("Saving draft:", {
-      ...data,
-      thumbnail: thumbnailUrl,
-      modules: modules,
+    console.log("Attempting to save draft with data:", { 
+      ...data, 
+      thumbnailUrl, 
+      modules 
     });
 
-    toast({
-      title: "Draft Saved",
-      description: "Your course draft has been saved",
-    });
+    // Validation checks (similar to onSubmit)
+    if (!thumbnailUrl) {
+      toast({
+        title: "Cannot Save Draft",
+        description: "Please provide a course thumbnail URL to save a draft.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (modules.length === 0) {
+      toast({
+        title: "Cannot Save Draft",
+        description: "Please add at least one module to save a draft.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const emptyModules = modules.filter((module) => module.lessons.length === 0);
+    if (emptyModules.length > 0) {
+      toast({
+        title: "Cannot Save Draft",
+        description: `Module "${emptyModules[0].title}" has no lessons. Please add lessons to save a draft.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      let currentCourseId = courseId; // Existing courseId if in edit mode or previously saved draft
+
+      const coursePayload = {
+        ...data,
+        categoryId: parseInt(data.categoryId),
+        thumbnail: thumbnailUrl,
+        instructor: "Default Instructor", 
+        totalLessons: modules.reduce((total, module) => total + module.lessons.length, 0),
+        featured: data.isFeatured,
+        bestseller: data.isBestseller,
+        isNew: data.isNew,
+        published: false, // Explicitly set as not published for a draft
+      };
+
+      console.log("Saving draft with payload:", coursePayload);
+
+      // Step 1: Create or Update Course (as draft)
+      if (isEditMode && currentCourseId) {
+        console.log(`Updating draft for course ${currentCourseId}`);
+        await apiRequest(`/api/courses/${currentCourseId}`, 
+          JSON.stringify(coursePayload),
+          { method: 'PATCH' }
+        );
+      } else {
+        console.log("Creating new draft course");
+        const courseResponse = await apiRequest('/api/courses', 
+          JSON.stringify(coursePayload),
+          { method: 'POST' }
+        );
+        const newCourseData = await courseResponse.json() as { id: number };
+        currentCourseId = newCourseData.id;
+        console.log("New draft course created with ID:", currentCourseId);
+        // If a new course is created as a draft, we might want to update the URL
+        // or main courseId state here to switch to edit mode for this new ID.
+        // For now, query invalidation will handle refetching.
+      }
+
+      if (!currentCourseId) {
+        toast({ title: "Error Saving Draft", description: "Failed to get course ID for draft.", variant: "destructive" });
+        return;
+      }
+
+      // Step 2: Process Modules and their Lessons for the draft
+      const processedModules = [];
+      for (const moduleState of modules) {
+        let currentModuleId = moduleState.id;
+        const modulePayload = {
+          title: moduleState.title,
+          courseId: currentCourseId,
+          order: moduleState.order,
+        };
+
+        const isExistingModule = moduleState.id && typeof moduleState.id === 'number' && moduleState.id > 0;
+
+        if (isEditMode && isExistingModule) {
+          console.log(`Updating module ${moduleState.id} for draft`);
+          await apiRequest(`/api/modules/${moduleState.id}`, 
+            JSON.stringify(modulePayload),
+            { method: 'PATCH' }
+          );
+        } else { 
+          console.log(`Creating new module for draft course ${currentCourseId}`);
+          const moduleResponse = await apiRequest('/api/modules', 
+            JSON.stringify(modulePayload),
+            { method: 'POST' }
+          );
+          const newModuleData = await moduleResponse.json() as { id: number };
+          currentModuleId = newModuleData.id;
+          console.log(`New module for draft created/processed with ID: ${currentModuleId}`);
+        }
+
+        if (!currentModuleId) {
+          toast({ title: "Error Saving Draft", description: `Failed to save module "${moduleState.title}" for draft.`, variant: "destructive" });
+          continue; 
+        }
+        
+        const processedLessons = [];
+        for (const lessonState of moduleState.lessons) {
+          const lessonPayload = {
+            title: lessonState.title,
+            moduleId: currentModuleId,
+            courseId: currentCourseId, 
+            order: lessonState.order,
+            videoUrl: lessonState.videoUrl, 
+            content: lessonState.content,
+            duration: lessonState.duration,
+          };
+
+          const isExistingLesson = lessonState.id && typeof lessonState.id === 'number' && lessonState.id > 0;
+
+          if (isEditMode && isExistingLesson) { 
+            console.log(`Updating lesson ${lessonState.id} for draft`);
+            await apiRequest(`/api/lessons/${lessonState.id}`, 
+              JSON.stringify(lessonPayload),
+              { method: 'PATCH' }
+            );
+            processedLessons.push(lessonState);
+          } else { 
+            console.log(`Creating new lesson for draft module ${currentModuleId}`);
+            const lessonResponse = await apiRequest('/api/lessons', 
+              JSON.stringify(lessonPayload),
+              { method: 'POST' }
+            );
+            const newLessonData = await lessonResponse.json() as { id: number }; 
+            processedLessons.push({ ...lessonState, id: newLessonData.id });
+            console.log(`New lesson for draft created with ID: ${newLessonData.id}`);
+          }
+        }
+        processedModules.push({ ...moduleState, id: currentModuleId, lessons: processedLessons });
+      }
+      
+      setModules(processedModules); // Update local state with new IDs from backend
+
+      toast({
+        title: "Draft Saved",
+        description: "Your course draft has been saved successfully!",
+      });
+      
+      // Invalidate queries to refresh data, especially if new IDs were generated
+      queryClient.invalidateQueries({ queryKey: ['/api/courses'] });
+      if (currentCourseId) { 
+        queryClient.invalidateQueries({ queryKey: ['/api/courses', currentCourseId] });
+        queryClient.invalidateQueries({ queryKey: ['/api/courses', currentCourseId, 'modules'] });
+      }
+
+    } catch (error) {
+      console.error("Error saving draft:", error);
+      toast({
+        title: "Error Saving Draft",
+        description: "Failed to save draft. Please check console and try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Show loading state while fetching course data in edit mode
@@ -704,10 +868,10 @@ export default function CourseCreationForm({ courseId: propsCourseId }: CourseCr
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {categories?.map((category) => (
+                            {hardcodedCategories.map((category) => (
                               <SelectItem
                                 key={category.id}
-                                value={category.id.toString()}
+                                value={category.id}
                               >
                                 {category.name}
                               </SelectItem>
@@ -780,34 +944,18 @@ export default function CourseCreationForm({ courseId: propsCourseId }: CourseCr
 
                 {/* Course Thumbnail */}
                 <div className="space-y-2">
-                  <FormLabel>Course Thumbnail</FormLabel>
+                  <FormLabel>Course Thumbnail URL</FormLabel>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                     <div>
-                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                        <input
-                          type="file"
-                          id="thumbnail"
-                          className="hidden"
-                          accept="image/*"
-                          onChange={handleThumbnailChange}
+                      <FormControl>
+                        <Input
+                          placeholder="https://example.com/image.png"
+                          value={thumbnailUrl}
+                          onChange={(e) => setThumbnailUrl(e.target.value)}
                         />
-                        <label
-                          htmlFor="thumbnail"
-                          className="flex flex-col items-center justify-center cursor-pointer"
-                        >
-                          <Upload className="h-10 w-10 text-gray-400 mb-2" />
-                          <span className="text-sm font-medium text-gray-900">
-                            {thumbnailFile
-                              ? "Replace thumbnail"
-                              : "Upload thumbnail"}
-                          </span>
-                          <span className="text-xs text-gray-500 mt-1">
-                            PNG, JPG or GIF (Max 2MB)
-                          </span>
-                        </label>
-                      </div>
+                      </FormControl>
                       <FormDescription className="mt-2">
-                        A high-quality image helps your course stand out
+                        Enter the URL for the course thumbnail image.
                       </FormDescription>
                     </div>
                     {thumbnailUrl && (
@@ -822,7 +970,6 @@ export default function CourseCreationForm({ courseId: propsCourseId }: CourseCr
                           className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full"
                           onClick={() => {
                             setThumbnailUrl("");
-                            setThumbnailFile(null);
                           }}
                         >
                           <X className="h-4 w-4" />
@@ -1181,8 +1328,8 @@ export default function CourseCreationForm({ courseId: propsCourseId }: CourseCr
                       </h2>
                       <div className="flex items-center gap-2 mt-2 text-sm text-gray-600">
                         <span>
-                          {categories?.find(
-                            (c) => c.id.toString() === form.watch("categoryId")
+                          {hardcodedCategories.find(
+                            (c) => c.id === form.watch("categoryId")
                           )?.name || "Category"}
                         </span>
                         <span>•</span>

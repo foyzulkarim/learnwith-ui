@@ -7,6 +7,36 @@ import LessonList from "../components/LessonList";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Link } from "wouter";
 import { useAuth } from "../../auth/context/AuthContext";
+import { fetcher } from "@/lib/api";
+
+interface Course {
+  id: number;
+  title: string;
+  description: string;
+  thumbnail: string;
+  instructor: string;
+  instructorAvatar?: string;
+  categoryId: number;
+  bestseller?: boolean;
+  featured?: boolean;
+  isNew?: boolean;
+  totalLessons: number;
+  totalDuration?: string;
+  lastUpdated?: string;
+  language?: string;
+  captions?: string[];
+  studentCount?: number;
+  rating?: string;
+}
+
+interface Lesson {
+  id: number;
+  courseId: number;
+  title: string;
+  duration: string;
+  isCompleted: boolean;
+  order: number;
+}
 
 export default function CourseDetailPage() {
   const params = useParams();
@@ -14,12 +44,15 @@ export default function CourseDetailPage() {
   const [lessonId, setLessonId] = useState<number | undefined>(undefined);
   const { isLoggedIn } = useAuth();
 
-  const { data: course, isLoading: isLoadingCourse } = useQuery<any>({
+  const { data: course, isLoading: isLoadingCourse } = useQuery<Course>({
     queryKey: [`/api/courses/${courseId}`],
+    queryFn: () => fetcher<Course>(`/api/courses/${courseId}`),
     enabled: !!courseId,
   });
-  const { data: lessons } = useQuery<any[]>({
+  
+  const { data: lessons } = useQuery<Lesson[]>({
     queryKey: [`/api/courses/${courseId}/lessons`],
+    queryFn: () => fetcher<Lesson[]>(`/api/courses/${courseId}/lessons`),
     enabled: !!courseId,
   });
 
@@ -65,9 +98,9 @@ export default function CourseDetailPage() {
               <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
               <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
               <Star className="h-5 w-5 fill-yellow-400 text-yellow-400 opacity-60" />
-              <span className="ml-2 text-white">(1,245 ratings)</span>
+              <span className="ml-2 text-white">{course.rating ? `(${course.rating})` : "(1,245 ratings)"}</span>
             </div>
-            <span className="text-gray-300 ml-2">75,141 students</span>
+            <span className="text-gray-300 ml-2">{course.studentCount?.toLocaleString() || "75,141"} students</span>
           </div>
           <div className="flex items-center">
             <span className="text-gray-300">Created by</span>
@@ -76,15 +109,15 @@ export default function CourseDetailPage() {
           <div className="flex flex-wrap items-center text-sm text-gray-300 mt-3">
             <div className="flex items-center mr-4">
               <Clock className="h-4 w-4 mr-1" />
-              <span>Last updated May 2025</span>
+              <span>Last updated {course.lastUpdated || "May 2025"}</span>
             </div>
             <div className="flex items-center mr-4">
               <Globe className="h-4 w-4 mr-1" />
-              <span>English</span>
+              <span>{course.language || "English"}</span>
             </div>
             <div className="flex items-center">
               <MessageSquare className="h-4 w-4 mr-1" />
-              <span>English, Spanish, Arabic captions</span>
+              <span>{course.captions?.join(", ") || "English, Spanish, Arabic captions"}</span>
             </div>
           </div>
         </div>
@@ -124,7 +157,7 @@ export default function CourseDetailPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div className="flex items-center">
                     <BookOpen className="h-5 w-5 text-primary mr-2" />
-                    <span>{course.totalLessons || 12} lessons</span>
+                    <span>{course.totalLessons} lessons</span>
                   </div>
                   <div className="flex items-center">
                     <span>{course.totalDuration || "6 hours"} of content</span>
@@ -141,7 +174,7 @@ export default function CourseDetailPage() {
                 <h3 className="font-medium mb-2">About the instructor</h3>
                 <div className="flex items-center">
                   <Avatar className="h-12 w-12 mr-4">
-                    <AvatarImage src={course.instructorAvatar || undefined} alt={course.instructor} />
+                    <AvatarImage src={course.instructorAvatar} alt={course.instructor} />
                     <AvatarFallback>{course.instructor.charAt(0)}</AvatarFallback>
                   </Avatar>
                   <div>
