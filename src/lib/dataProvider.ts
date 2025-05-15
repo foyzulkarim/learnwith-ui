@@ -1,4 +1,5 @@
 import { api, fetcher } from './api';
+import { CATEGORIES } from './constants';
 
 // Data provider that uses the real API for all data operations
 console.log('🌐 Using real API for all data operations');
@@ -7,7 +8,7 @@ console.log('🌐 Using real API for all data operations');
 export const dataProvider = {
   // Categories
   getCategories: async () => {
-    return fetcher('/api/categories');
+    return CATEGORIES;
   },
 
   // Courses

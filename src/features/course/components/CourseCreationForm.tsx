@@ -313,12 +313,12 @@ export default function CourseCreationForm({ courseId: propsCourseId }: CourseCr
       console.log("Course payload:", coursePayload);
       // Create or Update Course
       if (isEditMode && courseId) {
-        await apiRequest(`/api/course/save`, 
+        await apiRequest(`/api/courses/save`, 
           JSON.stringify({ ...coursePayload, id: courseId }),
           { method: 'POST' }
         );
       } else {
-        await apiRequest('/api/course/save', 
+        await apiRequest('/api/courses/save', 
           JSON.stringify(coursePayload),
           { method: 'POST' }
         );

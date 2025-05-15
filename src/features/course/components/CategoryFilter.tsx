@@ -1,5 +1,9 @@
-import { Category } from "@shared/schema";
 import { Button } from "@/components/ui/button";
+
+interface Category {
+  id: number;
+  name: string;
+}
 
 interface CategoryFilterProps {
   categories: Category[];

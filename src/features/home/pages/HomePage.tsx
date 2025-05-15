@@ -26,14 +26,6 @@ export default function HomePage() {
   });
   const isAuthenticated = isSuccess && !!user && !!user.id;
 
-  // Prefetch categories for better UX
-  useEffect(() => {
-    // Prefetch categories to have them ready for the CourseGrid component
-    void queryClient.prefetchQuery({
-      queryKey: ["/api/categories"],
-    });
-  }, []);
-
   return (
     <>
       <HeroSection />

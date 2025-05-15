@@ -123,61 +123,61 @@ function CoursesGrid({ setActiveTab }: { setActiveTab: (tab: string) => void }) 
             className="w-full md:w-48 h-32 object-cover rounded-md"
           />
           <div className="flex-1">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-              <h3 className="text-lg font-bold">{course.title}</h3>
-              <div className="flex items-center gap-2 text-sm">
-                {/* Status badges */}
-                {course.status === 'published' ? (
-                  <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full">Published</span>
-                ) : course.status === 'archived' ? (
-                  <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full">Archived</span>
-                ) : (
-                  <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full">Draft</span>
-                )}
-                {course.studentCount && course.studentCount > 0 && (
-                  <span className="text-gray-500">{course.studentCount} students</span>
-                )}
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="text-lg font-semibold">{course.title}</h3>
+                <p className="text-sm text-gray-500">
+                  {course.status === 'published' && <span className="text-green-500 font-medium mr-2">Published</span>}
+                  {course.status === 'draft' && <span className="text-amber-500 font-medium mr-2">Draft</span>}
+                  {course.status === 'archived' && <span className="text-gray-500 font-medium mr-2">Archived</span>}
+                  {course.publishedAt && <span>• Published {new Date(course.publishedAt).toLocaleDateString()}</span>}
+                </p>
               </div>
+              
+              {/* Course stats */}
+              {course.status === 'published' && (
+                <div className="flex space-x-4 text-sm text-gray-600">
+                  <div className="flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="9" cy="7" r="4"></circle>
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    <span>{course.studentCount || 0} Students</span>
+                  </div>
+                  <div className="flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M18 20V10"></path>
+                      <path d="M12 20V4"></path>
+                      <path d="M6 20v-6"></path>
+                    </svg>
+                    <span>{course.completionRate || 0}% Completion</span>
+                  </div>
+                </div>
+              )}
             </div>
-            <p className="text-gray-600 mt-2">{course.description}</p>
             
-            {/* Show metadata if published */}
-            {course.status === 'published' && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3">
-                <div className="text-gray-500 text-xs flex items-center">
-                  <span className="font-medium">Published:</span>
-                  <span className="ml-1">{course.publishedAt 
-                    ? new Date(course.publishedAt).toLocaleDateString() 
-                    : 'Recently'}</span>
-                </div>
-                <div className="text-gray-500 text-xs flex items-center">
-                  <span className="font-medium">Students:</span>
-                  <span className="ml-1">{course.studentCount || 0}</span>
-                </div>
-                <div className="text-gray-500 text-xs flex items-center">
-                  <span className="font-medium">Completion Rate:</span>
-                  <span className="ml-1">{course.completionRate || 0}%</span>
-                </div>
-                <div className="text-gray-500 text-xs flex items-center">
-                  <span className="font-medium">Rating:</span>
-                  <span className="ml-1">{course.rating || 'No ratings'}</span>
-                </div>
-              </div>
-            )}
+            <p className="mt-2 text-gray-700 line-clamp-2">
+              {course.description || "No description provided"}
+            </p>
             
             <div className="flex flex-wrap gap-2 mt-4">
-              <button 
-                onClick={() => {
-                  // Set active tab to "create" and navigate with the course ID as a parameter
-                  setActiveTab("create");
-                  const courseId = course.id;
-                  console.log("Edit course clicked, id:", courseId);
-                  window.history.pushState({courseId}, "", `/creator-dashboard?id=${courseId}`);
-                }}
-                className="text-sm px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100"
-              >
-                Edit
-              </button>
+              <Link href={`/creator-dashboard/courses/${course.id}/edit`}>
+                <button
+                  className="text-sm px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100"
+                  onClick={(e) => {
+                    // Prevent the default Link behavior
+                    e.preventDefault();
+                    // Set the active tab to "create" to show the edit form
+                    setActiveTab("create");
+                    // Update the URL manually
+                    window.history.pushState(null, "", `/creator-dashboard/courses/${course.id}/edit`);
+                  }}
+                >
+                  Edit
+                </button>
+              </Link>
               <Link href={`/creator-dashboard/courses/${course.id}/curriculum`}>
                 <button className="text-sm px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100">
                   Curriculum
@@ -253,13 +253,43 @@ function CoursesGrid({ setActiveTab }: { setActiveTab: (tab: string) => void }) 
 
 export default function CreatorDashboardPage() {
   const [location] = useLocation();
+  const [, params] = useRoute("/creator-dashboard/courses/:courseId/edit");
+  
+  // Check if we're on the edit route
+  const isEditRoute = !!params?.courseId;
+  
   // Use the path to determine which tab is active
   const path = location.split('/creator-dashboard')[1] || '';
+  
+  // Set the default active tab based on URL pattern
   const [activeTab, setActiveTab] = useState(
+    isEditRoute ? "create" :
     path === "/courses" ? "courses" : 
     path === "/create-course" ? "create" : 
     path === "/settings" ? "settings" : "dashboard"
   );
+
+  // Update active tab when location changes
+  useEffect(() => {
+    // Check if we're on the edit route - using the params from outside the effect
+    const isEditPath = !!params?.courseId;
+    
+    // Get the base path
+    const currentPath = location.split('/creator-dashboard')[1] || '';
+    
+    // Set the active tab based on the current path
+    if (isEditPath) {
+      setActiveTab("create");
+    } else if (currentPath === "/courses") {
+      setActiveTab("courses");
+    } else if (currentPath === "/create-course") {
+      setActiveTab("create");
+    } else if (currentPath === "/settings") {
+      setActiveTab("settings");
+    } else if (currentPath === "") {
+      setActiveTab("dashboard");
+    }
+  }, [location, params]);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
@@ -268,275 +298,233 @@ export default function CreatorDashboardPage() {
     if (value === "courses") newPath += "/courses";
     else if (value === "create") newPath += "/create-course";
     else if (value === "settings") newPath += "/settings";
+    
+    // Preserve any existing URL parameters
+    const urlParams = location.includes('?') ? location.split('?')[1] : '';
+    if (urlParams) {
+      newPath += `?${urlParams}`;
+    }
+    
     window.history.pushState(null, "", newPath);
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row gap-6">
-          {/* Sidebar */}
-          <div className="w-full md:w-64 shrink-0">
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle>Creator Tools</CardTitle>
-                <CardDescription>
-                  Create and manage your courses
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="p-0">
-                <Tabs
-                  value={activeTab}
-                  onValueChange={handleTabChange}
-                  orientation="vertical"
-                  className="h-full"
-                >
-                  <TabsList className="flex flex-col items-start rounded-none border-r w-full h-full space-y-1 bg-transparent p-0">
-                    <TabsTrigger 
-                      value="dashboard" 
-                      className="flex items-center justify-start gap-2 w-full rounded-none border-l-2 border-transparent px-4 py-2 text-base data-[state=active]:border-l-2 data-[state=active]:border-primary"
-                    >
-                      <LayoutDashboard className="h-5 w-5" />
-                      Dashboard
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="courses"
-                      className="flex items-center justify-start gap-2 w-full rounded-none border-l-2 border-transparent px-4 py-2 text-base data-[state=active]:border-l-2 data-[state=active]:border-primary"
-                    >
-                      <BookOpen className="h-5 w-5" />
-                      My Courses
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="create"
-                      className="flex items-center justify-start gap-2 w-full rounded-none border-l-2 border-transparent px-4 py-2 text-base data-[state=active]:border-l-2 data-[state=active]:border-primary"
-                    >
-                      <PlusCircle className="h-5 w-5" />
-                      Create New Course
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="settings"
-                      className="flex items-center justify-start gap-2 w-full rounded-none border-l-2 border-transparent px-4 py-2 text-base data-[state=active]:border-l-2 data-[state=active]:border-primary"
-                    >
-                      <Settings className="h-5 w-5" />
-                      Settings
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Main content */}
-          <div className="flex-1">
-            <Tabs 
-              value={activeTab} 
-              onValueChange={handleTabChange} 
-              className="w-full"
-            >
-              <TabsContent value="dashboard" className="mt-0">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Dashboard</CardTitle>
-                    <CardDescription>
-                      View your course statistics and performance
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div className="bg-white p-4 rounded-lg shadow-sm border">
-                        <h3 className="text-lg font-semibold mb-2">Total Courses</h3>
-                        <p className="text-3xl font-bold">5</p>
-                      </div>
-                      <div className="bg-white p-4 rounded-lg shadow-sm border">
-                        <h3 className="text-lg font-semibold mb-2">Total Students</h3>
-                        <p className="text-3xl font-bold">128</p>
-                      </div>
-                      <div className="bg-white p-4 rounded-lg shadow-sm border">
-                        <h3 className="text-lg font-semibold mb-2">Total Revenue</h3>
-                        <p className="text-3xl font-bold">$1,280</p>
-                      </div>
-                    </div>
-                    
-                    <div className="mt-8">
-                      <h3 className="text-lg font-semibold mb-4">Recent Activity</h3>
-                      <div className="space-y-4">
-                        <div className="p-4 border rounded-lg">
-                          <p className="font-medium">New enrollment in "Advanced JavaScript"</p>
-                          <p className="text-sm text-gray-500">2 hours ago</p>
-                        </div>
-                        <div className="p-4 border rounded-lg">
-                          <p className="font-medium">New review (4.5★) for "React Fundamentals"</p>
-                          <p className="text-sm text-gray-500">5 hours ago</p>
-                        </div>
-                        <div className="p-4 border rounded-lg">
-                          <p className="font-medium">Course "Vue.js for Beginners" published</p>
-                          <p className="text-sm text-gray-500">1 day ago</p>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="courses" className="mt-0">
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between">
-                    <div>
-                      <CardTitle>My Courses</CardTitle>
-                      <CardDescription>
-                        Manage your existing courses
-                      </CardDescription>
-                    </div>
-                    <Link href="/creator-dashboard/create-course">
-                      <button className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90">
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Create Course
-                      </button>
-                    </Link>
-                  </CardHeader>
-                  <CardContent>
-                    <CoursesGrid setActiveTab={setActiveTab} />
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="create" className="mt-0">
-                <Card>
-                  <CardContent className="p-0">
-                    {/* Get course ID from URL parameters if it exists */}
-                    {(() => {
-                      const urlParams = new URLSearchParams(location.includes('?') ? location.split('?')[1] : '');
-                      const courseId = urlParams.get('id') ? parseInt(urlParams.get('id')!, 10) : undefined;
-                      console.log("Creating CourseCreationForm with courseId:", courseId);
-                      return <CourseCreationForm courseId={courseId} />;
-                    })()}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="settings" className="mt-0">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Creator Settings</CardTitle>
-                    <CardDescription>
-                      Manage your creator profile and preferences
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <form className="space-y-6">
-                      <div className="space-y-2">
-                        <h3 className="text-lg font-medium">Profile Information</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <label htmlFor="display_name" className="text-sm font-medium">Display Name</label>
-                            <input
-                              id="display_name"
-                              type="text"
-                              defaultValue="Alex Morgan"
-                              className="w-full px-3 py-2 border rounded-md"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <label htmlFor="email" className="text-sm font-medium">Email</label>
-                            <input
-                              id="email"
-                              type="email"
-                              defaultValue="alex.morgan@example.com"
-                              className="w-full px-3 py-2 border rounded-md"
-                            />
-                          </div>
-                          <div className="space-y-2 md:col-span-2">
-                            <label htmlFor="bio" className="text-sm font-medium">Bio</label>
-                            <textarea
-                              id="bio"
-                              rows={4}
-                              defaultValue="Web developer and educator with 10+ years of experience in JavaScript, React, and modern web technologies."
-                              className="w-full px-3 py-2 border rounded-md"
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <h3 className="text-lg font-medium">Payment Information</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <label htmlFor="payment_method" className="text-sm font-medium">Payment Method</label>
-                            <select
-                              id="payment_method"
-                              className="w-full px-3 py-2 border rounded-md"
-                              defaultValue="paypal"
-                            >
-                              <option value="paypal">PayPal</option>
-                              <option value="bank">Bank Transfer</option>
-                              <option value="stripe">Stripe</option>
-                            </select>
-                          </div>
-                          <div className="space-y-2">
-                            <label htmlFor="account_email" className="text-sm font-medium">Account Email</label>
-                            <input
-                              id="account_email"
-                              type="email"
-                              defaultValue="payments.alex@example.com"
-                              className="w-full px-3 py-2 border rounded-md"
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <h3 className="text-lg font-medium">Notification Preferences</h3>
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-2">
-                            <input
-                              id="notify_enrollments"
-                              type="checkbox"
-                              defaultChecked
-                            />
-                            <label htmlFor="notify_enrollments" className="text-sm">Email me when someone enrolls in my course</label>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <input
-                              id="notify_reviews"
-                              type="checkbox"
-                              defaultChecked
-                            />
-                            <label htmlFor="notify_reviews" className="text-sm">Email me when I receive a new review</label>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <input
-                              id="notify_messages"
-                              type="checkbox"
-                              defaultChecked
-                            />
-                            <label htmlFor="notify_messages" className="text-sm">Email me when I receive a new message</label>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <input
-                              id="notify_marketing"
-                              type="checkbox"
-                            />
-                            <label htmlFor="notify_marketing" className="text-sm">Send me marketing and promotional emails</label>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex justify-end">
-                        <button
-                          type="submit"
-                          className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90"
-                        >
-                          Save Settings
-                        </button>
-                      </div>
-                    </form>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
-          </div>
-        </div>
+    <div className="container mx-auto px-4 py-8">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold mb-2">Creator Dashboard</h1>
+        <p className="text-gray-500">Manage your courses and creator settings</p>
       </div>
+      
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
+        <TabsList className="grid grid-cols-4 gap-4 mb-8 bg-transparent">
+          <TabsTrigger 
+            value="dashboard" 
+            className="data-[state=active]:shadow-none data-[state=active]:border-indigo-500 data-[state=active]:border-b-2 rounded-none flex items-center justify-center py-2 px-4"
+          >
+            <LayoutDashboard className="mr-2 h-4 w-4" />
+            <span>Overview</span>
+          </TabsTrigger>
+          <TabsTrigger 
+            value="courses" 
+            className="data-[state=active]:shadow-none data-[state=active]:border-indigo-500 data-[state=active]:border-b-2 rounded-none flex items-center justify-center py-2 px-4"
+          >
+            <BookOpen className="mr-2 h-4 w-4" />
+            <span>Courses</span>
+          </TabsTrigger>
+          <TabsTrigger 
+            value="create" 
+            className="data-[state=active]:shadow-none data-[state=active]:border-indigo-500 data-[state=active]:border-b-2 rounded-none flex items-center justify-center py-2 px-4"
+          >
+            <PlusCircle className="mr-2 h-4 w-4" />
+            <span>{isEditRoute ? "Edit Course" : "Create Course"}</span>
+          </TabsTrigger>
+          <TabsTrigger 
+            value="settings" 
+            className="data-[state=active]:shadow-none data-[state=active]:border-indigo-500 data-[state=active]:border-b-2 rounded-none flex items-center justify-center py-2 px-4"
+          >
+            <Settings className="mr-2 h-4 w-4" />
+            <span>Settings</span>
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="dashboard" className="mt-0">
+          <Card>
+            <CardHeader>
+              <CardTitle>Dashboard Overview</CardTitle>
+              <CardDescription>
+                A summary of your creator activities and statistics
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p>Dashboard content will go here...</p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="courses" className="mt-0">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>My Courses</CardTitle>
+                <CardDescription>
+                  Manage your existing courses
+                </CardDescription>
+              </div>
+              <Link href="/creator-dashboard/create-course">
+                <button className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90">
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Create Course
+                </button>
+              </Link>
+            </CardHeader>
+            <CardContent>
+              <CoursesGrid setActiveTab={setActiveTab} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="create" className="mt-0">
+          <Card>
+            <CardContent className="p-0">
+              {/* Get course ID from URL parameters or route parameters */}
+              {(() => {
+                // First check route params (for /creator-dashboard/courses/:courseId/edit)
+                if (params?.courseId) {
+                  const courseId = parseInt(params.courseId, 10);
+                  console.log("Creating CourseCreationForm with courseId from route:", courseId);
+                  return <CourseCreationForm courseId={courseId} />;
+                }
+                
+                // Then check query params (for backward compatibility)
+                const urlParams = new URLSearchParams(location.includes('?') ? location.split('?')[1] : '');
+                const courseId = urlParams.get('id') ? parseInt(urlParams.get('id')!, 10) : undefined;
+                console.log("Creating CourseCreationForm with courseId from query:", courseId);
+                return <CourseCreationForm courseId={courseId} />;
+              })()}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="settings" className="mt-0">
+          <Card>
+            <CardHeader>
+              <CardTitle>Creator Settings</CardTitle>
+              <CardDescription>
+                Manage your creator profile and preferences
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form className="space-y-6">
+                <div className="space-y-2">
+                  <h3 className="text-lg font-medium">Profile Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label htmlFor="display_name" className="text-sm font-medium">Display Name</label>
+                      <input
+                        id="display_name"
+                        type="text"
+                        defaultValue="Alex Morgan"
+                        className="w-full px-3 py-2 border rounded-md"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label htmlFor="email" className="text-sm font-medium">Email</label>
+                      <input
+                        id="email"
+                        type="email"
+                        defaultValue="alex.morgan@example.com"
+                        className="w-full px-3 py-2 border rounded-md"
+                      />
+                    </div>
+                    <div className="space-y-2 md:col-span-2">
+                      <label htmlFor="bio" className="text-sm font-medium">Bio</label>
+                      <textarea
+                        id="bio"
+                        rows={4}
+                        defaultValue="Web developer and educator with 10+ years of experience in JavaScript, React, and modern web technologies."
+                        className="w-full px-3 py-2 border rounded-md"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <h3 className="text-lg font-medium">Payment Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label htmlFor="payment_method" className="text-sm font-medium">Payment Method</label>
+                      <select
+                        id="payment_method"
+                        className="w-full px-3 py-2 border rounded-md"
+                        defaultValue="paypal"
+                      >
+                        <option value="paypal">PayPal</option>
+                        <option value="bank">Bank Transfer</option>
+                        <option value="stripe">Stripe</option>
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label htmlFor="account_email" className="text-sm font-medium">Account Email</label>
+                      <input
+                        id="account_email"
+                        type="email"
+                        defaultValue="payments.alex@example.com"
+                        className="w-full px-3 py-2 border rounded-md"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <h3 className="text-lg font-medium">Notification Preferences</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <input
+                        id="notify_enrollments"
+                        type="checkbox"
+                        defaultChecked
+                      />
+                      <label htmlFor="notify_enrollments" className="text-sm">Email me when someone enrolls in my course</label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        id="notify_reviews"
+                        type="checkbox"
+                        defaultChecked
+                      />
+                      <label htmlFor="notify_reviews" className="text-sm">Email me when I receive a new review</label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        id="notify_messages"
+                        type="checkbox"
+                        defaultChecked
+                      />
+                      <label htmlFor="notify_messages" className="text-sm">Email me when I receive a new message</label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        id="notify_marketing"
+                        type="checkbox"
+                      />
+                      <label htmlFor="notify_marketing" className="text-sm">Send me marketing and promotional emails</label>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 h-10 px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90"
+                  >
+                    Save Settings
+                  </button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

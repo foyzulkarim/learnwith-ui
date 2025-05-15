@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, ArrowDown } from "lucide-react";
 import { fetcher } from "@/lib/api";
+import { CATEGORIES } from "@/lib/constants";
 
 // Inline types for Course and Category
 interface Course {
@@ -53,13 +54,8 @@ export default function CourseGrid({
   const [selectedCategory, setSelectedCategory] = useState<number | null>(categoryId || null);
   const [currentLimit, setCurrentLimit] = useState(limit || 8);
 
-  // Fetch categories from real API
-  const { data: categories } = useQuery<Category[]>({
-    queryKey: ["/api/categories"],
-    queryFn: async () => {
-      return fetcher<Category[]>("/api/categories");
-    },
-  });
+  // Use hardcoded categories
+  const categories = CATEGORIES;
 
   // Fetch courses with filtering from real API
   const endpoint = inProgress ? "/api/courses/in-progress" : "/api/courses";
@@ -153,7 +149,7 @@ export default function CourseGrid({
                 thumbnail={course.thumbnail}
                 instructor={course.instructor}
                 instructorAvatar={course.instructorAvatar}
-                category={categories?.find(c => c.id === course.categoryId)?.name || ""}
+                category={categories.find(c => c.id === course.categoryId)?.name || ""}
                 price={course.price}
                 rating={course.rating}
                 isNew={course.isNew}
