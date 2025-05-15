@@ -5,9 +5,6 @@ const API_BASE_URL = typeof import.meta.env !== 'undefined' && import.meta.env.V
   ? import.meta.env.VITE_API_URL
   : 'http://localhost:4000';
 
-// Always use real API
-export let useMockApi = false;
-
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
     const text = (await res.text()) || res.statusText;
@@ -142,12 +139,3 @@ export const queryClient = new QueryClient({
     },
   },
 });
-
-// These functions are kept for compatibility but they're now no-ops
-export function enableMockApi() {
-  console.log('🌐 Using real API, mock API is disabled');
-}
-
-export function disableMockApi() {
-  console.log('🌐 Already using real API');
-}

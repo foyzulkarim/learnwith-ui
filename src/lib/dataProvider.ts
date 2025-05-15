@@ -1,6 +1,6 @@
 import { api, fetcher } from './api';
 
-// Simplified data provider that uses the real API for all data operations
+// Data provider that uses the real API for all data operations
 console.log('🌐 Using real API for all data operations');
 
 // Implement all data methods using the real API

@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { 
   Accordion,
@@ -9,45 +8,61 @@ import {
 } from "@/components/ui/accordion";
 import { CheckCircle2, Lock, PlayCircle, FileText, Video } from "lucide-react";
 
+interface Lesson {
+  _id: string;
+  title: string;
+  duration: string;
+  isCompleted: boolean;
+  order: number;
+  content?: string;
+  moduleId?: string;
+  moduleTitle?: string;
+}
+
+interface Module {
+  _id: string;
+  courseId: string;
+  title: string;
+  description?: string;
+  order: number;
+  lessons: Lesson[];
+}
+
 interface LessonListProps {
-  courseId: number;
-  currentLessonId?: number;
+  courseId: string;
+  modules: Module[];
+  currentLessonId?: string;
   isLocked?: boolean;
 }
 
-export default function LessonList({ courseId, currentLessonId, isLocked = false }: LessonListProps) {
+export default function LessonList({ courseId, modules, currentLessonId, isLocked = false }: LessonListProps) {
   const [expandedModules, setExpandedModules] = useState<string[]>([]);
 
-  // Fetch course modules and lessons
-  const { data: modules, isLoading: isLoadingModules } = useQuery<any[]>({
-    queryKey: [`/api/courses/${courseId}/modules`],
-  });
-
-  const { data: lessons, isLoading: isLoadingLessons } = useQuery<any[]>({
-    queryKey: [`/api/courses/${courseId}/lessons`],
-  });
-
   // Find the module that contains the current lesson and expand it by default
-  const findModuleForLesson = (lessonId: number) => {
-    const lesson = lessons?.find(l => l.id === lessonId);
-    return lesson?.moduleId;
+  const findModuleForLesson = (lessonId: string) => {
+    for (const module of modules) {
+      if (module.lessons.some(lesson => lesson._id === lessonId)) {
+        return module._id;
+      }
+    }
+    return undefined;
   };
 
   // When modules and current lesson load, expand the current module
   useEffect(() => {
-    if (currentLessonId && lessons && modules) {
+    if (currentLessonId && modules) {
       const moduleId = findModuleForLesson(currentLessonId);
       if (moduleId) {
         setExpandedModules([`module-${moduleId}`]);
       }
     } else if (modules && modules.length > 0) {
       // If no lesson is selected, expand the first module by default
-      setExpandedModules([`module-${modules[0].id}`]);
+      setExpandedModules([`module-${modules[0]._id}`]);
     }
-  }, [currentLessonId, lessons, modules]);
+  }, [currentLessonId, modules]);
 
   // Loading state for the lesson list
-  if (isLoadingModules || isLoadingLessons) {
+  if (!modules || modules.length === 0) {
     return (
       <div className="bg-background shadow-sm border border-gray-200 rounded-md p-0 animate-pulse">
         <div className="p-4 border-b border-gray-200">
@@ -67,84 +82,31 @@ export default function LessonList({ courseId, currentLessonId, isLocked = false
     );
   }
 
-  // If no modules available, show sample content structure based on the Udemy interface
-  if (!modules || modules.length === 0) {
-    // Create fake modules and lessons following the Udemy format
-    const dummyModules = [
-      {
-        id: 1,
-        title: "Section 1: Getting Started",
-        courseId,
-        order: 1,
-        lessons: [
-          { id: 101, title: "Introduction to the Course", duration: "5min", completed: false },
-          { id: 102, title: "Course Overview", duration: "10min", completed: false },
-          { id: 103, title: "Setting Up Your Environment", duration: "15min", completed: false }
-        ]
-      },
-      {
-        id: 2,
-        title: "Section 2: Core Concepts",
-        courseId,
-        order: 2,
-        lessons: [
-          { id: 201, title: "Understanding the Basics", duration: "12min", completed: false },
-          { id: 202, title: "Key Principles", duration: "18min", completed: false },
-          { id: 203, title: "Practical Applications", duration: "20min", completed: false }
-        ]
-      }
-    ];
-
-    return (
-      <div className="bg-white shadow-sm border border-gray-200 rounded-md">
-        <div className="p-4 border-b border-gray-200">
-          <h2 className="text-base font-semibold">Course content</h2>
-          <div className="flex justify-between items-center mt-2">
-            <span className="text-sm text-gray-600">6 lessons • 1h 20m total length</span>
-            <button className="text-sm text-primary hover:underline">Expand all sections</button>
-          </div>
-        </div>
-        <div className="divide-y divide-gray-200">
-          {dummyModules.map(module => (
-            <div key={module.id} className="border-0">
-              <div className="p-4 bg-gray-50 hover:bg-gray-100 cursor-pointer flex justify-between items-center">
-                <h3 className="font-medium text-sm">{module.title}</h3>
-                <div className="text-sm text-gray-500">{module.lessons.length} lectures • {module.lessons.length * 10}min</div>
-              </div>
-              <div className="divide-y divide-gray-200">
-                {module.lessons.map(lesson => (
-                  <div key={lesson.id} className="p-4 pl-6 hover:bg-gray-50 flex items-center justify-between">
-                    <div className="flex items-center">
-                      <PlayCircle className="text-primary mr-3 h-4 w-4" />
-                      <span className="text-sm">{lesson.title}</span>
-                    </div>
-                    <span className="text-xs text-gray-500">{lesson.duration}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  // Group lessons by module
-  const lessonsByModule = modules.reduce((acc, module) => {
-    acc[module.id] = lessons?.filter(lesson => lesson.moduleId === module.id) || [];
-    return acc;
-  }, {} as Record<number, any[]>);
-
-  // Calculate total lessons and course completion
-  const totalLessons = lessons?.length || 0;
-  const completedLessons = lessons?.filter(lesson => lesson.completed).length || 0;
+  // Calculate total lessons and course completion across all modules
+  const allLessons = modules.flatMap(module => module.lessons);
+  const totalLessons = allLessons.length;
+  const completedLessons = allLessons.filter(lesson => lesson.isCompleted).length;
   const completionPercentage = totalLessons > 0 ? (completedLessons / totalLessons) * 100 : 0;
+
+  // Estimate total duration
+  const totalDuration = modules.reduce((total, module) => {
+    // Sum up the durations of all lessons in the module
+    // Assuming duration is in a format like "10:00" or "5min"
+    return total + module.lessons.length * 10; // Simple approximation
+  }, 0);
+  
+  // Format the total duration in hours and minutes
+  const hours = Math.floor(totalDuration / 60);
+  const minutes = totalDuration % 60;
+  const formattedDuration = hours > 0 
+    ? `${hours}h ${minutes > 0 ? `${minutes}m` : ''}`
+    : `${minutes}m`;
 
   return (
     <div className="bg-background rounded-lg p-6">
       <h2 className="text-lg font-bold mb-4">Course Content</h2>
       <div className="flex justify-between items-center mb-4">
-        <span className="text-sm">{totalLessons} lessons • {modules[0]?.courseId ? "4 hours" : "0 hours"}</span>
+        <span className="text-sm">{totalLessons} lessons • {formattedDuration}</span>
         <span className="text-sm font-medium text-accent">{completionPercentage.toFixed(0)}% complete</span>
       </div>
       
@@ -165,30 +127,30 @@ export default function LessonList({ courseId, currentLessonId, isLocked = false
       >
         {modules.map((module) => (
           <AccordionItem 
-            key={module.id} 
-            value={`module-${module.id}`}
+            key={module._id} 
+            value={`module-${module._id}`}
             className="border border-gray-200 rounded-lg overflow-hidden"
           >
             <AccordionTrigger className="flex items-center justify-between bg-white p-4 hover:no-underline">
               <h3 className="font-medium text-left">{module.title}</h3>
             </AccordionTrigger>
             <AccordionContent className="p-0 border-t border-gray-200">
-              {lessonsByModule[module.id]?.length > 0 ? (
+              {module.lessons && module.lessons.length > 0 ? (
                 <ul className="divide-y divide-gray-200">
-                  {lessonsByModule[module.id].map((lesson: any) => {
-                    const isActive = lesson.id === currentLessonId;
-                    const isCompleted = lesson.completed;
-                    const showLock = isLocked || (!isCompleted && lesson.id !== currentLessonId);
+                  {module.lessons.map((lesson) => {
+                    const isActive = lesson._id === currentLessonId;
+                    const isCompleted = lesson.isCompleted;
+                    const showLock = isLocked || (!isCompleted && lesson._id !== currentLessonId);
                     return (
                       <li 
-                        key={lesson.id}
+                        key={lesson._id}
                         className={`
                           py-3 px-4 hover:bg-gray-50
                           ${isActive ? 'bg-blue-50' : ''}
                           ${isCompleted && !isActive ? 'bg-gray-50' : ''}
                         `}
                       >
-                        <Link href={showLock ? "#" : `/course/${courseId}/lesson/${lesson.id}`}>
+                        <Link href={showLock ? "#" : `/course/${courseId}/lesson/${lesson._id}`}>
                           <div className="flex items-center justify-between cursor-pointer">
                             <div className="flex items-center">
                               {showLock ? (
@@ -226,16 +188,32 @@ export default function LessonList({ courseId, currentLessonId, isLocked = false
         ))}
       </Accordion>
       
-      {currentLessonId && lessons && lessons.length > 0 && (
+      {currentLessonId && allLessons.length > 0 && (
         <div className="mt-6">
-          {/* Find the next lesson based on order within the modules */}
+          {/* Find the next lesson based on order across all modules */}
           {(() => {
+            // Sort all lessons by module order and then lesson order
+            const sortedLessons = [...allLessons].sort((a, b) => {
+              const moduleA = modules.find(m => m._id === a.moduleId);
+              const moduleB = modules.find(m => m._id === b.moduleId);
+              
+              if (!moduleA || !moduleB) return 0;
+              
+              // First sort by module order
+              if (moduleA.order !== moduleB.order) {
+                return moduleA.order - moduleB.order;
+              }
+              
+              // Then by lesson order within module
+              return a.order - b.order;
+            });
+            
             // Find current lesson index
-            const currentIndex = lessons.findIndex(lesson => lesson.id === currentLessonId);
-            if (currentIndex >= 0 && currentIndex < lessons.length - 1) {
-              const nextLesson = lessons[currentIndex + 1];
+            const currentIndex = sortedLessons.findIndex(lesson => lesson._id === currentLessonId);
+            if (currentIndex >= 0 && currentIndex < sortedLessons.length - 1) {
+              const nextLesson = sortedLessons[currentIndex + 1];
               return (
-                <Link href={`/course/${courseId}/lesson/${nextLesson.id}`} className="block text-center bg-primary hover:bg-primary/90 text-white font-medium rounded-lg px-4 py-3 transition-colors">
+                <Link href={`/course/${courseId}/lesson/${nextLesson._id}`} className="block text-center bg-primary hover:bg-primary/90 text-white font-medium rounded-lg px-4 py-3 transition-colors">
                   Next Lesson: {nextLesson.title} <span aria-hidden="true">→</span>
                 </Link>
               );

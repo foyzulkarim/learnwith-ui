@@ -10,7 +10,7 @@ import { useAuth } from "../../auth/context/AuthContext";
 import { fetcher } from "@/lib/api";
 
 interface Course {
-  id: number;
+  _id?: string;
   title: string;
   description: string;
   thumbnail: string;
@@ -30,18 +30,27 @@ interface Course {
 }
 
 interface Lesson {
-  id: number;
-  courseId: number;
+  _id?: string;
   title: string;
   duration: string;
   isCompleted: boolean;
   order: number;
+  content?: string;
+}
+
+interface Module {
+  _id?: string;
+  courseId: string;
+  title: string;
+  description?: string;
+  order: number;
+  lessons: Lesson[];
 }
 
 export default function CourseDetailPage() {
   const params = useParams();
-  const courseId = parseInt(params.courseId || "0", 10);
-  const [lessonId, setLessonId] = useState<number | undefined>(undefined);
+  const courseId = params.courseId || "";
+  const [lessonId, setLessonId] = useState<string | undefined>(undefined);
   const { isLoggedIn } = useAuth();
 
   const { data: course, isLoading: isLoadingCourse } = useQuery<Course>({
@@ -50,11 +59,23 @@ export default function CourseDetailPage() {
     enabled: !!courseId,
   });
   
-  const { data: lessons } = useQuery<Lesson[]>({
-    queryKey: [`/api/courses/${courseId}/lessons`],
-    queryFn: () => fetcher<Lesson[]>(`/api/courses/${courseId}/lessons`),
+  const { data: modules } = useQuery<Module[]>({
+    queryKey: [`/api/modules/course/${courseId}`],
+    queryFn: () => fetcher<Module[]>(`/api/modules/course/${courseId}`),
     enabled: !!courseId,
   });
+
+  // Flatten all lessons from all modules
+  const allLessons = modules?.flatMap(module => 
+    module.lessons.map(lesson => ({
+      ...lesson,
+      moduleId: module._id!,
+      moduleTitle: module.title
+    }))
+  ) || [];
+
+  // Get first lesson for "Start First Lesson" button
+  const firstLesson = allLessons.length > 0 ? allLessons.sort((a, b) => a.order - b.order)[0] : null;
 
   if (isLoadingCourse) {
     return <div className="py-10 bg-white">Loading...</div>;
@@ -130,8 +151,8 @@ export default function CourseDetailPage() {
                   <h3 className="text-xl font-bold mb-2">Start Learning</h3>
                   <p className="mb-4">Select a lesson from the curriculum to begin</p>
                   <Button className="bg-primary hover:bg-primary/90" onClick={() => {
-                    if (lessons && lessons.length > 0) {
-                      window.location.href = `/course/${courseId}/lesson/${lessons[0].id}`;
+                    if (firstLesson && firstLesson._id) {
+                      window.location.href = `/course/${courseId}/lesson/${firstLesson._id}`;
                     }
                   }}>
                     Start First Lesson
@@ -186,7 +207,12 @@ export default function CourseDetailPage() {
             </div>
           </div>
           <div className="lg:w-4/12">
-            <LessonList courseId={courseId} currentLessonId={lessonId} isLocked={!isLoggedIn} />
+            <LessonList 
+              courseId={courseId} 
+              modules={modules || []} 
+              currentLessonId={lessonId} 
+              isLocked={!isLoggedIn} 
+            />
           </div>
         </div>
       </div>

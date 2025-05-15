@@ -5,12 +5,8 @@
   "license": "MIT",
   "scripts": {
     "dev": "vite",
-    "dev:mock": "cross-env VITE_USE_MOCK_API=true vite",
-    "dev:direct": "vite --mode direct",
     "build": "vite build",
-    "build:mock": "cross-env VITE_USE_MOCK_API=true vite build",
     "preview": "vite preview",
-    "preview:mock": "cross-env VITE_USE_MOCK_API=true vite preview",
     "check": "tsc",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
   },
