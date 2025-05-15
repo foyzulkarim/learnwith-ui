@@ -99,12 +99,16 @@ function CoursesGrid({ setActiveTab }: { setActiveTab: (tab: string) => void }) 
       <div className="text-center p-8">
         <h3 className="text-lg font-semibold mb-2">No courses yet</h3>
         <p className="text-gray-500 mb-4">You haven't created any courses yet.</p>
-        <Link href="/creator-dashboard/create-course">
-          <button className="inline-flex items-center justify-center rounded-md text-sm font-medium h-10 px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90">
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Create Your First Course
-          </button>
-        </Link>
+        <button 
+          onClick={() => {
+            setActiveTab("create");
+            window.history.pushState(null, "", "/creator-dashboard/create-course");
+          }}
+          className="inline-flex items-center justify-center rounded-md text-sm font-medium h-10 px-4 py-2 bg-primary text-primary-foreground hover:bg-primary/90"
+        >
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Create Your First Course
+        </button>
       </div>
     );
   }
