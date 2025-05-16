@@ -15,58 +15,132 @@ import AIAssistant from "../../ai-assistant/components/AIAssistant";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "../../auth/context/AuthContext";
 
+// Helper function to safely get lesson ID regardless of property name
+const getLessonId = (lesson: any): string => {
+  // Check for common ID field patterns
+  return lesson?._id || lesson?.id || lesson?.lessonId || '';
+};
+
+// Define types for our data
+interface Lesson {
+  _id: string;
+  title: string;
+  duration: string;
+  isCompleted: boolean;
+  order: number;
+  content?: string;
+  videoUrl?: string;
+  moduleId?: string;
+  moduleTitle?: string;
+}
+
+interface Module {
+  _id: string;
+  courseId: string;
+  title: string;
+  description?: string;
+  order: number;
+  lessons: Lesson[];
+}
+
+interface Course {
+  _id: string;
+  title: string;
+  description: string;
+  thumbnail: string;
+  instructor: string;
+}
+
+interface CurriculumData {
+  modules: Module[];
+}
+
 export default function LessonPlayerPage() {
   const params = useParams();
-  const courseId = parseInt(params.courseId || "0", 10);
-  const lessonId = parseInt(params.lessonId || "0", 10);
+  const courseId = params.courseId || "0";
+  const moduleId = params.moduleId || "0";
+  const lessonId = params.lessonId || "0";
   const [activeTab, setActiveTab] = useState("overview");
   const [quizAnswers, setQuizAnswers] = useState<Record<number, string>>({});
   const [noteContent, setNoteContent] = useState("");
+  const [lessonModuleId, setLessonModuleId] = useState<string | null>(() => {
+    // For debugging
+    console.log("Initial moduleId from URL:", moduleId);
+    return moduleId !== "0" ? moduleId : null;
+  });
   const { isLoggedIn } = useAuth();
 
-  const { data: course } = useQuery<any>({
+  // Course data query
+  const { data: course } = useQuery<Course>({
     queryKey: [`/api/courses/${courseId}`],
     enabled: !!courseId,
   });
-  const { data: lessons } = useQuery<any[]>({
-    queryKey: [`/api/courses/${courseId}/lessons`],
+  
+  // Get curriculum data (modules and lessons)
+  const { data: curriculumData } = useQuery<CurriculumData>({
+    queryKey: [`/api/courses/${courseId}/curriculum`],
     enabled: !!courseId,
   });
-  const { data: currentLesson } = useQuery<any>({
-    queryKey: [`/api/lessons/${lessonId}`],
-    enabled: !!lessonId,
+  
+  // Get current lesson data using the new API structure
+  const { data: currentLesson } = useQuery<Lesson>({
+    queryKey: [`/api/courses/${courseId}/modules/${lessonModuleId}/lessons/${lessonId}`],
+    enabled: !!courseId && !!lessonModuleId && !!lessonId,
   });
-  const { data: quizQuestions } = useQuery<any[]>({
-    queryKey: [`/api/lessons/${lessonId}/quiz`],
-    enabled: !!lessonId,
-  });
-  const { data: note } = useQuery<any>({
-    queryKey: [`/api/lessons/${lessonId}/note`],
-    enabled: !!lessonId,
-  });
+  
+  // Quiz questions for the current lesson
+  // const { data: quizQuestions } = useQuery<any[]>({
+  //   queryKey: [`/api/courses/${courseId}/modules/${lessonModuleId}/lessons/${lessonId}/quiz`],
+  //   enabled: !!courseId && !!lessonModuleId && !!lessonId,
+  // });
+  
+  // Notes for the current lesson
+  // const { data: note } = useQuery<any>({
+  //   queryKey: [`/api/courses/${courseId}/modules/${lessonModuleId}/lessons/${lessonId}/note`],
+  //   enabled: !!courseId && !!lessonModuleId && !!lessonId && isLoggedIn,
+  // });
 
+  // Save note mutation
   const saveNoteMutation = useMutation({
     mutationFn: async (content: string) => {
-      return apiRequest(`/api/lessons/${lessonId}/note`, { content }, { method: "POST" });
+      if (!lessonModuleId) return Promise.reject("Module ID not found");
+      
+      return apiRequest(
+        `/api/courses/${courseId}/modules/${lessonModuleId}/lessons/${lessonId}/note`, 
+        { content }, 
+        { method: "POST" }
+      );
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/lessons/${lessonId}/note`] });
+      if (lessonModuleId) {
+        queryClient.invalidateQueries({ 
+          queryKey: [`/api/courses/${courseId}/modules/${lessonModuleId}/lessons/${lessonId}/note`] 
+        });
+      }
     },
   });
 
+  // Check quiz answers mutation
   const checkQuizAnswersMutation = useMutation({
     mutationFn: async (answers: Record<number, string>) => {
-      return apiRequest(`/api/lessons/${lessonId}/quiz/check`, { answers }, { method: "POST" });
+      if (!lessonModuleId) return Promise.reject("Module ID not found");
+      
+      return apiRequest(
+        `/api/courses/${courseId}/modules/${lessonModuleId}/lessons/${lessonId}/quiz/check`, 
+        { answers }, 
+        { method: "POST" }
+      );
     },
   });
 
   useEffect(() => {
-    if (note) {
-      setNoteContent(note.content);
-    } else {
-      setNoteContent("");
-    }
-  }, [note]);
+    // if (note) {
+    //   setNoteContent(note.content);
+    // } else {
+    //   setNoteContent("");
+    // }
+    setNoteContent("");
+  }, [/* note */]);
 
   const handleSaveNote = () => {
     if (lessonId) {
@@ -75,18 +149,127 @@ export default function LessonPlayerPage() {
   };
 
   const handleCheckAnswers = () => {
-    if (quizQuestions && quizQuestions.length > 0) {
-      checkQuizAnswersMutation.mutate(quizAnswers);
-    }
+    // if (quizQuestions && quizQuestions.length > 0) {
+    //   checkQuizAnswersMutation.mutate(quizAnswers);
+    // }
+    checkQuizAnswersMutation.mutate(quizAnswers);
   };
 
-  const totalLessons = lessons?.length || 0;
-  const completedLessons = lessons?.filter(lesson => lesson.completed).length || 0;
+  // Extract modules from curriculum data
+  const modules = curriculumData?.modules || [];
+  
+  // Find the module ID for the current lesson if it's not in the URL (legacy route)
+  useEffect(() => {
+    // Only attempt to find module if we have modules data and need to find it
+    if (moduleId === "0" && modules.length > 0 && lessonId !== "0") {
+      // Try to find which module contains this lesson
+      for (const module of modules) {
+        const foundLesson = module.lessons.find(lesson => 
+          getLessonId(lesson) === lessonId
+        );
+        
+        if (foundLesson) {
+          console.log(`Found lesson ${lessonId} in module ${module._id}`);
+          
+          // Make sure the lesson has moduleId property set
+          if (!foundLesson.moduleId) {
+            foundLesson.moduleId = module._id;
+            foundLesson.moduleTitle = module.title;
+          }
+          
+          setLessonModuleId(module._id);
+          break;
+        }
+      }
+    }
+  }, [moduleId, lessonId, modules]);
+  
+  // Calculate progress - ensure all lessons have moduleId property
+  const allLessons = modules.flatMap((module: Module) => 
+    module.lessons.map(lesson => ({
+      ...lesson,
+      moduleId: lesson.moduleId || module._id, // Use existing moduleId or set from module
+      moduleTitle: lesson.moduleTitle || module.title
+    }))
+  );
+  const totalLessons = allLessons.length || 0;
+  const completedLessons = allLessons.filter((lesson: Lesson) => lesson.isCompleted).length || 0;
   const progressPercentage = totalLessons > 0 ? (completedLessons / totalLessons) * 100 : 0;
 
-  if (!course || !currentLesson) {
-    return <div className="py-10 bg-white text-center">Loading lesson...</div>;
+  // Add debug logging for API parameters
+  useEffect(() => {
+    console.log("LessonPlayerPage loaded with parameters:", {
+      courseId,
+      providedModuleId: moduleId,
+      resolvedModuleId: lessonModuleId,
+      lessonId,
+      hasModulesData: modules.length > 0
+    });
+    
+    if (!lessonModuleId && modules.length > 0) {
+      console.warn("Module ID not available - will attempt to find based on lesson ID");
+    }
+    
+    if (!lessonModuleId && !modules.length) {
+      console.error("Cannot resolve module ID: No modules data available and no moduleId in URL");
+    }
+  }, [courseId, moduleId, lessonModuleId, lessonId, modules]);
+
+  // Add more detailed debug logging about the data structure
+  useEffect(() => {
+    if (curriculumData && curriculumData.modules) {
+      console.log("Curriculum data structure:", {
+        moduleCount: curriculumData.modules.length,
+        firstModule: curriculumData.modules[0] ? {
+          id: curriculumData.modules[0]._id,
+          lessonCount: curriculumData.modules[0].lessons?.length || 0
+        } : null,
+        lessonSample: curriculumData.modules[0]?.lessons?.[0] ? {
+          id: curriculumData.modules[0].lessons[0]._id,
+          moduleId: curriculumData.modules[0].lessons[0].moduleId,
+          autoAddedModuleId: curriculumData.modules[0]._id
+        } : null
+      });
+      
+      // Check if lessons have moduleId
+      const lessonsWithoutModuleId = curriculumData.modules.flatMap(module => 
+        module.lessons.filter(lesson => !lesson.moduleId)
+      );
+      
+      if (lessonsWithoutModuleId.length > 0) {
+        console.warn(`Found ${lessonsWithoutModuleId.length} lessons without moduleId property`);
+      }
+    }
+  }, [curriculumData]);
+
+  // Handle loading and error states
+  const isLoading = !course || !currentLesson || !lessonModuleId;
+  
+  if (isLoading) {
+    return <div className="py-10 bg-white text-center">
+      <div className="animate-pulse">
+        <div className="h-8 bg-gray-200 rounded w-48 mx-auto mb-4"></div>
+        <div className="h-4 bg-gray-200 rounded w-64 mx-auto"></div>
+        {!lessonModuleId && modules.length > 0 && (
+          <div className="mt-4 text-amber-600 text-sm">Finding the correct module for this lesson...</div>
+        )}
+      </div>
+    </div>;
   }
+
+  // For templating - hardcoded quiz questions (when actual data is commented out)
+  const quizQuestions = [
+    {
+      id: 1,
+      question: "Sample quiz question 1?",
+      options: ["Option A", "Option B", "Option C", "Option D"]
+    },
+    {
+      id: 2,
+      question: "Sample quiz question 2?",
+      options: ["Option A", "Option B", "Option C", "Option D"]
+    }
+  ];
 
   return (
     <section className="min-h-screen bg-gradient-to-br from-gray-50 to-white flex flex-col">
@@ -289,9 +472,21 @@ export default function LessonPlayerPage() {
         </div>
         {/* Sidebar with course content */}
         <div className="md:w-1/3 lg:w-1/4 border-l border-gray-200 bg-white/80 sticky top-[64px] h-[calc(100vh-64px)] shadow-inner p-2 md:p-4">
-          <LessonList courseId={courseId} currentLessonId={lessonId} isLocked={!isLoggedIn} />
+          <LessonList 
+            courseId={courseId} 
+            modules={modules.map(module => ({
+              ...module,
+              lessons: module.lessons.map(lesson => ({
+                ...lesson,
+                moduleId: lesson.moduleId || module._id
+              }))
+            }))}
+            currentLessonId={lessonId}
+            currentModuleId={lessonModuleId}
+            isLocked={!isLoggedIn} 
+          />
         </div>
       </div>
     </section>
   );
-} 
+}

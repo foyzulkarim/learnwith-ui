@@ -8,6 +8,12 @@ import {
 } from "@/components/ui/accordion";
 import { CheckCircle2, Lock, PlayCircle, FileText, Video } from "lucide-react";
 
+// Helper function to safely get lesson ID regardless of property name
+const getLessonId = (lesson: any): string => {
+  // Check for common ID field patterns
+  return lesson?._id?.toString() || lesson?.id?.toString() || lesson?.lessonId?.toString() || '';
+};
+
 interface Lesson {
   _id: string;
   title: string;
@@ -32,34 +38,41 @@ interface LessonListProps {
   courseId: string;
   modules: Module[];
   currentLessonId?: string;
+  currentModuleId?: string;
   isLocked?: boolean;
 }
 
-export default function LessonList({ courseId, modules, currentLessonId, isLocked = false }: LessonListProps) {
+export default function LessonList({ courseId, modules, currentLessonId, currentModuleId, isLocked = false }: LessonListProps) {
   const [expandedModules, setExpandedModules] = useState<string[]>([]);
 
-  // Find the module that contains the current lesson and expand it by default
-  const findModuleForLesson = (lessonId: string) => {
-    for (const module of modules) {
-      if (module.lessons.some(lesson => lesson._id === lessonId)) {
-        return module._id;
-      }
-    }
-    return undefined;
-  };
-
-  // When modules and current lesson load, expand the current module
+  // Add logging to debug the data
   useEffect(() => {
-    if (currentLessonId && modules) {
-      const moduleId = findModuleForLesson(currentLessonId);
-      if (moduleId) {
-        setExpandedModules([`module-${moduleId}`]);
-      }
-    } else if (modules && modules.length > 0) {
-      // If no lesson is selected, expand the first module by default
-      setExpandedModules([`module-${modules[0]._id}`]);
+    console.log("LessonList received data:", { courseId, modules, currentLessonId, currentModuleId, isLocked });
+    if (!courseId) {
+      console.error("Warning: courseId is undefined or empty in LessonList component");
     }
-  }, [currentLessonId, modules]);
+    if (modules && modules.length > 0) {
+      console.log("First module lessons:", modules[0].lessons);
+      
+      // Check if lessons have _id properties
+      const missingIds = modules.flatMap(module => 
+        module.lessons.filter(lesson => !lesson._id)
+      );
+      
+      if (missingIds.length > 0) {
+        console.error("Warning: Found lessons without _id property:", missingIds);
+      }
+    }
+  }, [courseId, modules, currentLessonId, currentModuleId, isLocked]);
+
+  // Expand all modules by default
+  useEffect(() => {
+    if (modules && modules.length > 0) {
+      // Expand all modules by default
+      const allModuleIds = modules.map(module => `module-${module._id}`);
+      setExpandedModules(allModuleIds);
+    }
+  }, [modules]);
 
   // Loading state for the lesson list
   if (!modules || modules.length === 0) {
@@ -138,19 +151,46 @@ export default function LessonList({ courseId, modules, currentLessonId, isLocke
               {module.lessons && module.lessons.length > 0 ? (
                 <ul className="divide-y divide-gray-200">
                   {module.lessons.map((lesson) => {
-                    const isActive = lesson._id === currentLessonId;
+                    const lessonId = getLessonId(lesson);
+                    const moduleIdForUrl = lesson.moduleId || module._id;
+                    // Use only lesson ID for matching since module ID might be causing issues
+                    const isActive = lessonId === currentLessonId;
+                    console.log("isActive", {isActive, lessonId, currentLessonId});
+                    
+                    // Debug logs
+                    if (lessonId === currentLessonId) {
+                      console.log("Found lesson with matching ID:", {
+                        lessonId,
+                        currentLessonId,
+                        moduleIdForUrl,
+                        currentModuleId,
+                        isActive,
+                        lessonTitle: lesson.title
+                      });
+                    }
+                    
                     const isCompleted = lesson.isCompleted;
-                    const showLock = isLocked || (!isCompleted && lesson._id !== currentLessonId);
+                    // const showLock = isLocked || (!isCompleted && lessonId !== currentLessonId);
+                    const showLock = false; // For testing purposes, always show lessons
+                    
+                    // Create lesson URL only if we have a valid lesson ID
+                    const lessonUrl = lessonId ? `/course/${courseId}/module/${moduleIdForUrl}/lesson/${lessonId}` : "#";
+                    
                     return (
                       <li 
-                        key={lesson._id}
+                        key={lessonId || `lesson-${Math.random()}`}
                         className={`
-                          py-3 px-4 hover:bg-gray-50
-                          ${isActive ? 'bg-blue-50' : ''}
+                          py-3 px-4 hover:bg-gray-50 transition-colors duration-150
                           ${isCompleted && !isActive ? 'bg-gray-50' : ''}
                         `}
+                        style={isActive ? { 
+                          backgroundColor: 'rgb(79, 70, 229)', // Primary indigo color
+                          color: 'white', 
+                          borderLeft: '4px solid rgb(55, 48, 163)', // Darker indigo for border
+                          fontWeight: 'bold'
+                        } : {}}
                       >
-                        <Link href={showLock ? "#" : `/course/${courseId}/lesson/${lesson._id}`}>
+                        <Link href={showLock ? "#" : lessonUrl}>
                           <div className="flex items-center justify-between cursor-pointer">
                             <div className="flex items-center">
                               {showLock ? (
@@ -163,14 +203,18 @@ export default function LessonList({ courseId, modules, currentLessonId, isLocke
                                 </span>
                               ) : isCompleted ? (
                                 <CheckCircle2 className="text-green-500 mr-3 h-5 w-5" />
+                              ) : isActive ? (
+                                <PlayCircle style={{ color: 'white' }} className="mr-3 h-5 w-5 animate-pulse" />
                               ) : (
                                 <PlayCircle className="text-primary mr-3 h-5 w-5" />
                               )}
-                              <span className={`${showLock ? "text-gray-500" : "text-gray-800"} ${isActive ? "font-medium" : ""}`}>
+                              <span style={isActive ? { color: 'white', fontWeight: 'bold' } : {}}>
                                 {lesson.title}
                               </span>
                             </div>
-                            <span className="text-sm text-gray-500">{lesson.duration || "10:00"}</span>
+                            <span style={isActive ? { color: 'white', fontWeight: 'bold' } : {}} className="text-sm">
+                              {lesson.duration || "10:00"}
+                            </span>
                           </div>
                         </Link>
                       </li>
@@ -208,15 +252,36 @@ export default function LessonList({ courseId, modules, currentLessonId, isLocke
               return a.order - b.order;
             });
             
-            // Find current lesson index
-            const currentIndex = sortedLessons.findIndex(lesson => lesson._id === currentLessonId);
+            // Find current lesson index using getLessonId helper
+            const currentIndex = sortedLessons.findIndex(lesson => 
+              getLessonId(lesson) === currentLessonId
+            );
+            
             if (currentIndex >= 0 && currentIndex < sortedLessons.length - 1) {
               const nextLesson = sortedLessons[currentIndex + 1];
-              return (
-                <Link href={`/course/${courseId}/lesson/${nextLesson._id}`} className="block text-center bg-primary hover:bg-primary/90 text-white font-medium rounded-lg px-4 py-3 transition-colors">
-                  Next Lesson: {nextLesson.title} <span aria-hidden="true">→</span>
-                </Link>
-              );
+              const nextLessonId = getLessonId(nextLesson);
+              
+              // Only create the link if we have a valid lesson ID
+              if (nextLesson && nextLessonId) {
+                // Find the module that contains this lesson to get moduleId
+                const nextLessonModule = modules.find(m => 
+                  m.lessons.some(l => getLessonId(l) === nextLessonId)
+                );
+                const moduleIdForNextLesson = nextLesson.moduleId || nextLessonModule?._id;
+                
+                if (!moduleIdForNextLesson) {
+                  console.error(`Cannot find module ID for next lesson: ${nextLessonId}`);
+                }
+                
+                return (
+                  <Link 
+                    href={`/course/${courseId}/module/${moduleIdForNextLesson}/lesson/${nextLessonId}`} 
+                    className="block text-center bg-primary hover:bg-primary/90 text-white font-medium rounded-lg px-4 py-3 transition-colors"
+                  >
+                    Next Lesson: {nextLesson.title} <span aria-hidden="true">→</span>
+                  </Link>
+                );
+              }
             }
             // If there's no next lesson, show a "Complete Course" button
             return (

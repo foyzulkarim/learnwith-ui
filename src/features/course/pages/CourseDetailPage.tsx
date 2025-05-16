@@ -115,17 +115,17 @@ export default function CourseDetailPage() {
   }
 
   return (
-    <section className="py-10 bg-gray-50">
+    <section className="pt-12 pb-16 bg-gray-50">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-6">
+        <div className="mb-8">
           <Link href="/courses" className="text-primary hover:text-secondary inline-flex items-center">
             <ArrowLeft className="mr-2 h-4 w-4" /> Back to My Courses
           </Link>
         </div>
-        <div className="bg-gray-900 text-white p-8 rounded-t-lg mb-0">
-          <h1 className="text-3xl font-bold mb-3">{course.title}</h1>
-          <p className="text-xl mb-4">{course.description || "Master key concepts and techniques with this comprehensive course"}</p>
-          <div className="flex flex-wrap items-center gap-2 mb-4">
+        <div className="bg-gray-900 text-white p-10 py-12 rounded-t-lg mb-0">
+          <h1 className="text-4xl font-bold mb-4">{course.title}</h1>
+          <p className="text-xl mb-6">{course.description || "Master key concepts and techniques with this comprehensive course"}</p>
+          <div className="flex flex-wrap items-center gap-3 mb-6">
             {course.bestseller && (
               <span className="bg-yellow-500 text-black text-xs font-semibold px-2.5 py-0.5 rounded">BESTSELLER</span>
             )}
@@ -141,32 +141,32 @@ export default function CourseDetailPage() {
               <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
               <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
               <Star className="h-5 w-5 fill-yellow-400 text-yellow-400 opacity-60" />
-              <span className="ml-2 text-white">{course.rating ? `(${course.rating})` : "(1,245 ratings)"}</span>
+              <span className="ml-2 text-white text-md">{course.rating ? `(${course.rating})` : "(1,245 ratings)"}</span>
             </div>
             <span className="text-gray-300 ml-2">{course.studentCount?.toLocaleString() || "0"} students</span>
           </div>
-          <div className="flex items-center">
+          <div className="flex items-center mb-4">
             <span className="text-gray-300">Created by</span>
             <Link href="#instructor" className="text-primary ml-2 hover:underline">{course.instructor || "Default Instructor"}</Link>
           </div>
-          <div className="flex flex-wrap items-center text-sm text-gray-300 mt-3">
-            <div className="flex items-center mr-4">
-              <Clock className="h-4 w-4 mr-1" />
+          <div className="flex flex-wrap items-center text-sm text-gray-300 mt-4">
+            <div className="flex items-center mr-6">
+              <Clock className="h-4 w-4 mr-2" />
               <span>Last updated {course.lastUpdated || "May 2025"}</span>
             </div>
-            <div className="flex items-center mr-4">
-              <Globe className="h-4 w-4 mr-1" />
+            <div className="flex items-center mr-6">
+              <Globe className="h-4 w-4 mr-2" />
               <span>{course.language || "English"}</span>
             </div>
             <div className="flex items-center">
-              <MessageSquare className="h-4 w-4 mr-1" />
+              <MessageSquare className="h-4 w-4 mr-2" />
               <span>{course.captions?.join(", ") || "English, Spanish, Arabic captions"}</span>
             </div>
           </div>
         </div>
-        <div className="flex flex-col lg:flex-row">
-          <div className="lg:w-8/12 lg:pr-8">
-            <div className="relative pb-[56.25%] bg-gray-100 rounded-lg mb-6 overflow-hidden">
+        <div className="flex flex-col lg:flex-row mt-2">
+          <div className="lg:w-8/12 lg:pr-10">
+            <div className="relative pb-[56.25%] bg-gray-100 rounded-lg mb-8 overflow-hidden shadow-md">
               <img 
                 src={course.thumbnail || "https://via.placeholder.com/800x450?text=Course+Thumbnail"} 
                 alt={course.title} 
@@ -179,8 +179,8 @@ export default function CourseDetailPage() {
                   <Button 
                     className="bg-primary hover:bg-primary/90" 
                     onClick={() => {
-                      if (firstLesson && firstLesson._id) {
-                        window.location.href = `/course/${courseId}/lesson/${firstLesson._id}`;
+                      if (firstLesson && firstLesson._id && firstLesson.moduleId) {
+                        window.location.href = `/course/${courseId}/module/${firstLesson.moduleId}/lesson/${firstLesson._id}`;
                       }
                     }}
                     disabled={!firstLesson}
@@ -191,9 +191,9 @@ export default function CourseDetailPage() {
               </div>
             </div>
             {/* Course overview content */}
-            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-              <h2 className="text-xl font-bold mb-4">Course Overview</h2>
-              <p className="text-gray-700 mb-6">{course.description}</p>
+            <div className="bg-white rounded-lg shadow-md p-8 mb-8">
+              <h2 className="text-2xl font-bold mb-6">Course Overview</h2>
+              <p className="text-gray-700 mb-8">{course.description}</p>
               <div className="mb-6">
                 <h3 className="font-medium mb-2">What you'll learn</h3>
                 <ul className="list-disc pl-5 text-gray-700 space-y-1">
