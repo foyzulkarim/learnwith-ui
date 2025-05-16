@@ -29,6 +29,7 @@ interface Course {
   title: string;
   description: string;
   thumbnail: string;
+  thumbnailUrl?: string; // Added for compatibility with CourseDetailsForm
   instructor: string;
   instructorAvatar?: string;
   categoryId: number;
@@ -48,6 +49,10 @@ function CoursesGrid({ setActiveTab }: { setActiveTab: (tab: string) => void }) 
   // Fetch courses from the API
   const { data: courses, isLoading, error, refetch } = useQuery<Course[]>({
     queryKey: ["/api/courses"],
+    select: (data) => data.map(course => ({
+      ...course,
+      thumbnailUrl: course.thumbnail // Map thumbnail to thumbnailUrl for compatibility
+    }))
   });
   
   // Function to update course status (publish/unpublish/archive)
@@ -171,15 +176,40 @@ function CoursesGrid({ setActiveTab }: { setActiveTab: (tab: string) => void }) 
                     e.preventDefault();
                     // Set the active tab to "create" to show the edit form
                     setActiveTab("create");
-                    // Update the URL manually
+                    // Update the URL manually without query parameters
                     window.history.pushState(null, "", `/creator-dashboard/courses/${course.id}/edit`);
                   }}
                 >
                   Edit
                 </button>
               </Link>
+              <Link href={`/creator-dashboard/courses/${course.id}/detail`}>
+                <button
+                  className="text-sm px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100"
+                  onClick={(e) => {
+                    // Prevent the default Link behavior
+                    e.preventDefault();
+                    // Set the active tab to "create" to show the edit form
+                    setActiveTab("create");
+                    // Update the URL manually without query parameters
+                    window.history.pushState(null, "", `/creator-dashboard/courses/${course.id}/detail`);
+                  }}
+                >
+                  Details
+                </button>
+              </Link>
               <Link href={`/creator-dashboard/courses/${course.id}/curriculum`}>
-                <button className="text-sm px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100">
+                <button 
+                  className="text-sm px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100"
+                  onClick={(e) => {
+                    // Prevent the default Link behavior
+                    e.preventDefault();
+                    // Set the active tab to "create" to show the form
+                    setActiveTab("create");
+                    // Update the URL manually without query parameters
+                    window.history.pushState(null, "", `/creator-dashboard/courses/${course.id}/curriculum`);
+                  }}
+                >
                   Curriculum
                 </button>
               </Link>
@@ -254,16 +284,25 @@ function CoursesGrid({ setActiveTab }: { setActiveTab: (tab: string) => void }) 
 export default function CreatorDashboardPage() {
   const [location] = useLocation();
   const [, params] = useRoute("/creator-dashboard/courses/:courseId/edit");
+  const [, curriculumParams] = useRoute("/creator-dashboard/courses/:courseId/curriculum");
+  const [, editCurriculumParams] = useRoute("/creator-dashboard/courses/:courseId/edit/curriculum");
+  const [, detailParams] = useRoute("/creator-dashboard/courses/:courseId/detail");
   
   // Check if we're on the edit route
   const isEditRoute = !!params?.courseId;
+  // Check if we're on the curriculum route
+  const isCurriculumRoute = !!curriculumParams?.courseId;
+  // Check if we're on the edit/curriculum route
+  const isEditCurriculumRoute = !!editCurriculumParams?.courseId;
+  // Check if we're on the detail route
+  const isDetailRoute = !!detailParams?.courseId;
   
   // Use the path to determine which tab is active
   const path = location.split('/creator-dashboard')[1] || '';
   
   // Set the default active tab based on URL pattern
   const [activeTab, setActiveTab] = useState(
-    isEditRoute ? "create" :
+    isEditRoute || isCurriculumRoute || isEditCurriculumRoute || isDetailRoute ? "create" :
     path === "/courses" ? "courses" : 
     path === "/create-course" ? "create" : 
     path === "/settings" ? "settings" : "dashboard"
@@ -273,12 +312,15 @@ export default function CreatorDashboardPage() {
   useEffect(() => {
     // Check if we're on the edit route - using the params from outside the effect
     const isEditPath = !!params?.courseId;
+    const isCurriculumPath = !!curriculumParams?.courseId;
+    const isEditCurriculumPath = !!editCurriculumParams?.courseId;
+    const isDetailPath = !!detailParams?.courseId;
     
     // Get the base path
     const currentPath = location.split('/creator-dashboard')[1] || '';
     
     // Set the active tab based on the current path
-    if (isEditPath) {
+    if (isEditPath || isCurriculumPath || isEditCurriculumPath || isDetailPath) {
       setActiveTab("create");
     } else if (currentPath === "/courses") {
       setActiveTab("courses");
@@ -289,7 +331,7 @@ export default function CreatorDashboardPage() {
     } else if (currentPath === "") {
       setActiveTab("dashboard");
     }
-  }, [location, params]);
+  }, [location, params, curriculumParams, editCurriculumParams, detailParams]);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
@@ -388,18 +430,45 @@ export default function CreatorDashboardPage() {
             <CardContent className="p-0">
               {/* Get course ID from URL parameters or route parameters */}
               {(() => {
-                // First check route params (for /creator-dashboard/courses/:courseId/edit)
-                if (params?.courseId) {
-                  const courseId = parseInt(params.courseId, 10);
-                  console.log("Creating CourseCreationForm with courseId from route:", courseId);
+                // Check for edit/curriculum route first (most specific)
+                if (editCurriculumParams?.courseId) {
+                  const courseId = parseInt(editCurriculumParams.courseId, 10);
+                  console.log("Creating CourseCreationForm with courseId from edit/curriculum route:", courseId);
                   return <CourseCreationForm courseId={courseId} />;
                 }
                 
-                // Then check query params (for backward compatibility)
+                // Check for detail route
+                if (detailParams?.courseId) {
+                  const courseId = parseInt(detailParams.courseId, 10);
+                  console.log("Creating CourseCreationForm with courseId from detail route:", courseId);
+                  return <CourseCreationForm courseId={courseId} initialTab="details" />;
+                }
+                
+                // Check for edit route
+                if (params?.courseId) {
+                  const courseId = parseInt(params.courseId, 10);
+                  console.log("Creating CourseCreationForm with courseId from edit route:", courseId);
+                  return <CourseCreationForm courseId={courseId} />;
+                }
+                
+                // Check for curriculum route
+                if (curriculumParams?.courseId) {
+                  const courseId = parseInt(curriculumParams.courseId, 10);
+                  console.log("Creating CourseCreationForm with courseId from curriculum route:", courseId);
+                  return <CourseCreationForm courseId={courseId} initialTab="curriculum" />;
+                }
+                
+                // Finally, check query params (for backward compatibility)
                 const urlParams = new URLSearchParams(location.includes('?') ? location.split('?')[1] : '');
                 const courseId = urlParams.get('id') ? parseInt(urlParams.get('id')!, 10) : undefined;
-                console.log("Creating CourseCreationForm with courseId from query:", courseId);
-                return <CourseCreationForm courseId={courseId} />;
+                
+                if (courseId) {
+                  console.log("Creating CourseCreationForm with courseId from query:", courseId);
+                  return <CourseCreationForm courseId={courseId} />;
+                }
+                
+                // No course ID found, create a new course
+                return <CourseCreationForm />;
               })()}
             </CardContent>
           </Card>

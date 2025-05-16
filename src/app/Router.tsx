@@ -45,6 +45,14 @@ function Router() {
             <CreatorDashboardPage />
           </ProtectedRoute>
 
+          <ProtectedRoute path="/creator-dashboard/courses/:courseId/detail">
+            <CreatorDashboardPage />
+          </ProtectedRoute>
+
+          <ProtectedRoute path="/creator-dashboard/courses/:courseId/curriculum">
+            <CreatorDashboardPage />
+          </ProtectedRoute>
+
           <ProtectedRoute path="/creator-dashboard/courses/:courseId/edit">
             <CreatorDashboardPage />
           </ProtectedRoute>

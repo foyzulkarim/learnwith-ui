@@ -64,6 +64,7 @@ export default function LessonEditModal({
   const [uploadProgress, setUploadProgress] = useState(0);
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null);
+  const [isUrlInput, setIsUrlInput] = useState(lesson?.videoUrl ? true : false);
 
   // Form setup
   const form = useForm<LessonFormValues>({
@@ -224,7 +225,42 @@ export default function LessonEditModal({
             {/* Video Upload */}
             <div className="space-y-2">
               <FormLabel>Lesson Video</FormLabel>
-              {!form.watch("videoUrl") && !isUploading ? (
+              <div className="flex items-center space-x-2 mb-2">
+                <Button
+                  type="button"
+                  variant={!isUrlInput ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setIsUrlInput(false)}
+                >
+                  Upload Video
+                </Button>
+                <Button
+                  type="button"
+                  variant={isUrlInput ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setIsUrlInput(true)}
+                >
+                  Video URL
+                </Button>
+              </div>
+              
+              {isUrlInput ? (
+                <FormField
+                  control={form.control}
+                  name="videoUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Input
+                          placeholder="Enter video URL (YouTube, Vimeo, or direct video link)"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ) : !form.watch("videoUrl") && !isUploading ? (
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
                   <input
                     type="file"
