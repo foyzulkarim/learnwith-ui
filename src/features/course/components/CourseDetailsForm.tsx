@@ -72,11 +72,14 @@ export default function CourseDetailsForm({
   
   // Fetch course data if in edit mode
   const { data: courseData, isLoading } = useQuery({
-    queryKey: ["/api/courses", courseId],
+    queryKey: [`/api/courses/${courseId}`, courseId],
     queryFn: async () => {
       if (!courseId) return null;
       try {
         const response = await apiRequest(`/api/courses/${courseId}`);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch course data: ${response.status}`);
+        }
         return await response.json();
       } catch (error) {
         console.error("Error fetching course data:", error);
@@ -85,6 +88,9 @@ export default function CourseDetailsForm({
       }
     },
     enabled: !!courseId,
+    staleTime: 0, // Always fetch fresh data
+    refetchOnWindowFocus: true, // Refetch when window regains focus
+    refetchOnMount: 'always', // Always refetch when component mounts
   });
   
   // Update form values when course data is loaded
@@ -107,6 +113,9 @@ export default function CourseDetailsForm({
   
   // Handle form submission
   const onSubmit = async (values: CourseFormValues) => {
+    console.log("Form submitted with values:", values);
+    console.log("Current courseId:", courseId);
+    
     setIsSubmitting(true);
     try {
       const courseData = {
@@ -119,16 +128,25 @@ export default function CourseDetailsForm({
         ? `/api/courses/${courseId}` 
         : '/api/courses';
       
-      const response = await apiRequest(apiUrl, {
-        method: courseId ? 'PUT' : 'POST',
-        body: JSON.stringify(courseData),
-      });
+      console.log("Sending request to:", apiUrl, "with method:", courseId ? 'PUT' : 'POST');
+      console.log("Request payload:", courseData);
+      
+      const response = await apiRequest(
+        apiUrl, 
+        courseData, 
+        { method: courseId ? 'PUT' : 'POST' }
+      );
+      
+      console.log("Response status:", response.status);
       
       if (!response.ok) {
-        throw new Error('Failed to save course');
+        const errorText = await response.text();
+        throw new Error(`Failed to save course: ${response.status} - ${errorText}`);
       }
       
       const savedCourse = await response.json();
+      console.log("Saved course data:", savedCourse);
+      
       toast({
         title: courseId ? "Course Updated" : "Course Created",
         description: courseId ? "Your course has been updated successfully." : "Your new course has been created successfully.",
@@ -162,7 +180,10 @@ export default function CourseDetailsForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
+      <form onSubmit={(e) => {
+        console.log("Form onSubmit triggered");
+        form.handleSubmit(onSubmit)(e);
+      }}>
         <Card>
           <CardHeader>
             <CardTitle>Course Details</CardTitle>
@@ -411,9 +432,23 @@ export default function CourseDetailsForm({
             </div>
           </CardContent>
           <CardFooter className="flex justify-end space-x-2">
+            {/* Debug button to check form state */}
+            <Button 
+              type="button"
+              variant="outline"
+              onClick={() => {
+                console.log("Form state:", form.getValues());
+                console.log("Form errors:", form.formState.errors);
+                console.log("Form is valid:", form.formState.isValid);
+              }}
+            >
+              Check Form
+            </Button>
+            
             <Button 
               type="submit" 
               disabled={isSubmitting}
+              onClick={() => console.log("Update button clicked")}
             >
               {isSubmitting ? (
                 <>
