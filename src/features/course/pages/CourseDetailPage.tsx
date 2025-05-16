@@ -9,6 +9,31 @@ import { Link } from "wouter";
 import { useAuth } from "../../auth/context/AuthContext";
 import { fetcher } from "@/lib/api";
 
+// Define interfaces that match LessonList component's expected types
+interface Lesson {
+  _id: string;
+  title: string;
+  duration: string;
+  isCompleted: boolean;
+  order: number;
+  content?: string;
+  moduleId?: string;
+  moduleTitle?: string;
+}
+
+interface Module {
+  _id: string;
+  courseId: string;
+  title: string;
+  description?: string;
+  order: number;
+  lessons: Lesson[];
+}
+
+interface CurriculumData {
+  modules: Module[];
+}
+
 interface Course {
   _id?: string;
   title: string;
@@ -29,24 +54,6 @@ interface Course {
   rating?: string;
 }
 
-interface Lesson {
-  _id?: string;
-  title: string;
-  duration: string;
-  isCompleted: boolean;
-  order: number;
-  content?: string;
-}
-
-interface Module {
-  _id?: string;
-  courseId: string;
-  title: string;
-  description?: string;
-  order: number;
-  lessons: Lesson[];
-}
-
 export default function CourseDetailPage() {
   const params = useParams();
   const courseId = params.courseId || "";
@@ -59,27 +66,42 @@ export default function CourseDetailPage() {
     enabled: !!courseId,
   });
   
-  const { data: modules } = useQuery<Module[]>({
-    queryKey: [`/api/modules/course/${courseId}`],
-    queryFn: () => fetcher<Module[]>(`/api/modules/course/${courseId}`),
+  const { data: curriculumData, isLoading: isLoadingModules } = useQuery<CurriculumData>({
+    queryKey: [`/api/courses/${courseId}/curriculum`],
+    queryFn: () => fetcher<CurriculumData>(`/api/courses/${courseId}/curriculum`),
     enabled: !!courseId,
   });
 
+  // Extract modules from curriculum data
+  const modules = curriculumData?.modules || [];
+
   // Flatten all lessons from all modules
-  const allLessons = modules?.flatMap(module => 
-    module.lessons.map(lesson => ({
+  const allLessons = modules.flatMap((module: Module) => 
+    module.lessons.map((lesson: Lesson) => ({
       ...lesson,
-      moduleId: module._id!,
+      moduleId: module._id,
       moduleTitle: module.title
     }))
-  ) || [];
+  );
 
   // Get first lesson for "Start First Lesson" button
-  const firstLesson = allLessons.length > 0 ? allLessons.sort((a, b) => a.order - b.order)[0] : null;
+  const firstLesson = allLessons.length > 0 ? allLessons.sort((a: Lesson, b: Lesson) => a.order - b.order)[0] : null;
 
-  if (isLoadingCourse) {
-    return <div className="py-10 bg-white">Loading...</div>;
+  if (isLoadingCourse || isLoadingModules) {
+    return (
+      <div className="py-10 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="animate-pulse space-y-4">
+            <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+            <div className="h-64 bg-gray-200 rounded-lg"></div>
+            <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+            <div className="h-32 bg-gray-200 rounded-lg"></div>
+          </div>
+        </div>
+      </div>
+    );
   }
+  
   if (!course) {
     return (
       <div className="py-16 bg-white text-center">
@@ -105,13 +127,13 @@ export default function CourseDetailPage() {
           <p className="text-xl mb-4">{course.description || "Master key concepts and techniques with this comprehensive course"}</p>
           <div className="flex flex-wrap items-center gap-2 mb-4">
             {course.bestseller && (
-              <Badge className="bg-yellow-500 text-black border-yellow-400 font-semibold">BESTSELLER</Badge>
+              <span className="bg-yellow-500 text-black text-xs font-semibold px-2.5 py-0.5 rounded">BESTSELLER</span>
             )}
             {course.featured && (
-              <Badge className="bg-purple-500 text-white border-purple-400">FEATURED</Badge>
+              <span className="bg-purple-500 text-white text-xs font-semibold px-2.5 py-0.5 rounded">FEATURED</span>
             )}
             {course.isNew && (
-              <Badge className="bg-green-500 text-white border-green-400">NEW</Badge>
+              <span className="bg-green-500 text-white text-xs font-semibold px-2.5 py-0.5 rounded">NEW</span>
             )}
             <div className="flex items-center text-yellow-400 ml-2">
               <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
@@ -121,11 +143,11 @@ export default function CourseDetailPage() {
               <Star className="h-5 w-5 fill-yellow-400 text-yellow-400 opacity-60" />
               <span className="ml-2 text-white">{course.rating ? `(${course.rating})` : "(1,245 ratings)"}</span>
             </div>
-            <span className="text-gray-300 ml-2">{course.studentCount?.toLocaleString() || "75,141"} students</span>
+            <span className="text-gray-300 ml-2">{course.studentCount?.toLocaleString() || "0"} students</span>
           </div>
           <div className="flex items-center">
             <span className="text-gray-300">Created by</span>
-            <Link href="#instructor" className="text-primary ml-2 hover:underline">{course.instructor}</Link>
+            <Link href="#instructor" className="text-primary ml-2 hover:underline">{course.instructor || "Default Instructor"}</Link>
           </div>
           <div className="flex flex-wrap items-center text-sm text-gray-300 mt-3">
             <div className="flex items-center mr-4">
@@ -145,16 +167,24 @@ export default function CourseDetailPage() {
         <div className="flex flex-col lg:flex-row">
           <div className="lg:w-8/12 lg:pr-8">
             <div className="relative pb-[56.25%] bg-gray-100 rounded-lg mb-6 overflow-hidden">
-              <img src={course.thumbnail} alt={course.title} className="absolute inset-0 w-full h-full object-cover" />
+              <img 
+                src={course.thumbnail || "https://via.placeholder.com/800x450?text=Course+Thumbnail"} 
+                alt={course.title} 
+                className="absolute inset-0 w-full h-full object-cover" 
+              />
               <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
                 <div className="text-white text-center p-4">
                   <h3 className="text-xl font-bold mb-2">Start Learning</h3>
                   <p className="mb-4">Select a lesson from the curriculum to begin</p>
-                  <Button className="bg-primary hover:bg-primary/90" onClick={() => {
-                    if (firstLesson && firstLesson._id) {
-                      window.location.href = `/course/${courseId}/lesson/${firstLesson._id}`;
-                    }
-                  }}>
+                  <Button 
+                    className="bg-primary hover:bg-primary/90" 
+                    onClick={() => {
+                      if (firstLesson && firstLesson._id) {
+                        window.location.href = `/course/${courseId}/lesson/${firstLesson._id}`;
+                      }
+                    }}
+                    disabled={!firstLesson}
+                  >
                     Start First Lesson
                   </Button>
                 </div>
@@ -178,15 +208,18 @@ export default function CourseDetailPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div className="flex items-center">
                     <BookOpen className="h-5 w-5 text-primary mr-2" />
-                    <span>{course.totalLessons} lessons</span>
+                    <span>{course.totalLessons || allLessons.length} lessons</span>
                   </div>
                   <div className="flex items-center">
+                    <Clock className="h-5 w-5 text-primary mr-2" />
                     <span>{course.totalDuration || "6 hours"} of content</span>
                   </div>
                   <div className="flex items-center">
+                    <Badge className="h-5 w-5 text-primary mr-2" />
                     <span>Certificate on completion</span>
                   </div>
                   <div className="flex items-center">
+                    <ArrowLeft className="h-5 w-5 text-primary mr-2 rotate-180" />
                     <span>Downloadable resources</span>
                   </div>
                 </div>
@@ -196,10 +229,10 @@ export default function CourseDetailPage() {
                 <div className="flex items-center">
                   <Avatar className="h-12 w-12 mr-4">
                     <AvatarImage src={course.instructorAvatar} alt={course.instructor} />
-                    <AvatarFallback>{course.instructor.charAt(0)}</AvatarFallback>
+                    <AvatarFallback>{course.instructor ? course.instructor.charAt(0).toUpperCase() : "D"}</AvatarFallback>
                   </Avatar>
                   <div>
-                    <div className="font-medium">{course.instructor}</div>
+                    <div className="font-medium">{course.instructor || "Default Instructor"}</div>
                     <div className="text-sm text-gray-500">Expert Instructor</div>
                   </div>
                 </div>
@@ -208,10 +241,10 @@ export default function CourseDetailPage() {
           </div>
           <div className="lg:w-4/12">
             <LessonList 
-              courseId={courseId} 
-              modules={modules || []} 
-              currentLessonId={lessonId} 
-              isLocked={!isLoggedIn} 
+              courseId={courseId}
+              modules={modules || []}
+              currentLessonId={lessonId}
+              isLocked={!isLoggedIn}
             />
           </div>
         </div>
