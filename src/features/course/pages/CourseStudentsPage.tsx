@@ -50,7 +50,7 @@ export default function CourseStudentsPage() {
     id: number;
     title: string;
     description: string;
-    thumbnail: string;
+    thumbnailUrl: string;
     instructor: string;
     status: string;
     studentCount?: number;

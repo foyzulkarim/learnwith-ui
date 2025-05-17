@@ -19,7 +19,8 @@ export default function Header() {
   const isMobile = useMobile();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const { isLoggedIn, user, logout } = useAuth();
+  const { isLoggedIn, isLocalDev, user, logout } = useAuth();
+  const effectiveIsLoggedIn = isLoggedIn || isLocalDev;
   const [, navigate] = useLocation();
 
   const handleSearch = (e: React.FormEvent) => {
@@ -72,7 +73,7 @@ export default function Header() {
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
             </form>
             
-            {isLoggedIn ? (
+            {effectiveIsLoggedIn ? (
               /* Logged In - Profile Dropdown */
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -168,7 +169,7 @@ export default function Header() {
                 </Link>
               )}
               
-              {!isLoggedIn && (
+              {!effectiveIsLoggedIn && (
                 <>
                   <div className="border-t border-gray-200 dark:border-gray-700 my-2 pt-2"></div>
                   <Link href="/login" className="flex items-center font-medium text-primary">
@@ -182,7 +183,7 @@ export default function Header() {
                 </>
               )}
               
-              {isLoggedIn && (
+              {effectiveIsLoggedIn && (
                 <>
                   <div className="border-t border-gray-200 dark:border-gray-700 my-2 pt-2"></div>
                   <Link href="/profile" className="font-medium">

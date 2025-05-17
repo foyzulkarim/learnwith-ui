@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Plus, Trash, ChevronDown, ChevronRight, Eye } from "lucide-react";
+import { Plus, Trash, ChevronDown, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import LessonEditModal from "./LessonEditModal";
 
 interface Lesson {
-  id: number;
+  _id: string;
   title: string;
   videoUrl: string;
   content: string;
@@ -17,24 +17,25 @@ interface Lesson {
 }
 
 interface Module {
-  id: number;
+  _id: string;
   title: string;
   order: number;
   lessons: Lesson[];
 }
 
 interface EditingLesson {
-  id?: number;
-  moduleId: number;
+  _id: string;
+  moduleId: string;
   title: string;
   videoUrl: string;
   content: string;
   order: number;
   duration: string;
+  tempId?: string;
 }
 
 interface CourseCurriculumFormProps {
-  courseId: number;
+  courseId: string;
 }
 
 export default function CourseCurriculumForm({
@@ -45,7 +46,6 @@ export default function CourseCurriculumForm({
   const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>({});
   const [isLessonModalOpen, setIsLessonModalOpen] = useState(false);
   const [editingLesson, setEditingLesson] = useState<EditingLesson | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Fetch curriculum data
   const { data: curriculumData, isLoading } = useQuery({
@@ -77,89 +77,270 @@ export default function CourseCurriculumForm({
       // Initialize expanded state for all modules
       const expandedState: Record<string, boolean> = {};
       curriculumData.modules.forEach((module: Module) => {
-        expandedState[module.id.toString()] = true; // Default expanded
+        expandedState[module._id.toString()] = true; // Default expanded
       });
       setExpandedModules(expandedState);
     }
   }, [curriculumData]);
 
-  // Save curriculum mutation
-  const saveCurriculumMutation = useMutation({
-    mutationFn: async () => {
-      setIsSubmitting(true);
-      try {
-        console.log("Saving curriculum for course ID:", courseId);
-        console.log("Modules to save:", modules);
-        const response = await apiRequest(
-          `/api/courses/${courseId}/curriculum`,
-          { modules },
-          { method: 'POST' }
-        );
-        console.log("Response:", response);
-        if (!response.ok) {
-          throw new Error('Failed to save curriculum');
-        }
-        
-        return await response.json();
-      } finally {
-        setIsSubmitting(false);
+  // Individual mutations for modules and lessons
+  
+  // Add/Update Module mutation
+  const moduleUpsertMutation = useMutation({
+    mutationFn: async (module: Partial<Omit<Module, 'lessons'>> & { _id?: string, tempId?: string }) => {
+      const method = module._id && !module.tempId ? 'PUT' : 'POST';
+      const url = module._id && !module.tempId 
+        ? `/api/courses/${courseId}/modules/${module._id}`
+        : `/api/courses/${courseId}/modules`;
+      
+      // Remove tempId before sending to server
+      const { tempId, ...serverModule } = module;
+      
+      const response = await apiRequest(url, serverModule, { method });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to ${module._id && !module.tempId ? 'update' : 'create'} module`);
       }
+      
+      const result = await response.json();
+      return { ...result, tempId };
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // If this was a new module with a tempId, update the ID in the modules state
+      if (data.tempId) {
+        setModules(prevModules => 
+          prevModules.map(module => 
+            module._id === data.tempId 
+              ? { ...module, _id: data._id } 
+              : module
+          )
+        );
+        
+        // Also update the expanded state with the new ID
+        setExpandedModules(prev => {
+          const newState = { ...prev };
+          if (prev[data.tempId.toString()]) {
+            newState[data._id.toString()] = prev[data.tempId.toString()];
+            delete newState[data.tempId.toString()];
+          }
+          return newState;
+        });
+      }
+      
       toast({
-        title: "Curriculum Saved",
-        description: "Your course curriculum has been saved successfully."
+        title: "Success",
+        description: `Module ${data.tempId ? "created" : "updated"} successfully.`
+      });
+      
+      // Refresh data from server to ensure everything is in sync
+      queryClient.invalidateQueries({ queryKey: ['/api/courses', courseId, 'curriculum'] });
+    },
+    onError: (error) => {
+      console.error("Error saving module:", error);
+      toast({ 
+        title: "Error", 
+        description: "Failed to save module.", 
+        variant: "destructive" 
+      });
+    }
+  });
+
+  // Delete Module mutation
+  const moduleDeleteMutation = useMutation({
+    mutationFn: async (moduleId: string) => {
+      const response = await apiRequest(
+        `/api/courses/${courseId}/modules/${moduleId}`,
+        {},
+        { method: 'DELETE' }
+      );
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete module');
+      }
+      
+      return moduleId;
+    },
+    onSuccess: (moduleId) => {
+      // Optimistic update
+      setModules(prevModules => prevModules.filter(m => m._id !== moduleId));
+      
+      toast({
+        title: "Module Deleted",
+        description: "Module has been deleted successfully."
       });
       queryClient.invalidateQueries({ queryKey: ['/api/courses', courseId, 'curriculum'] });
     },
     onError: (error) => {
-      console.error("Error saving curriculum:", error);
+      console.error("Error deleting module:", error);
       toast({ 
         title: "Error", 
-        description: "Failed to save curriculum.", 
+        description: "Failed to delete module.", 
+        variant: "destructive" 
+      });
+    }
+  });
+
+  // Add/Update Lesson mutation
+  const lessonUpsertMutation = useMutation({
+    mutationFn: async (lesson: EditingLesson & { tempId?: string }) => {
+      const method = lesson._id && !lesson.tempId ? 'PUT' : 'POST';
+      const url = lesson._id && !lesson.tempId 
+        ? `/api/courses/${courseId}/modules/${lesson.moduleId}/lessons/${lesson._id}`
+        : `/api/courses/${courseId}/modules/${lesson.moduleId}/lessons`;
+      
+      // Remove tempId before sending to server
+      const { tempId, ...serverLesson } = lesson;
+      
+      const response = await apiRequest(url, serverLesson, { method });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to ${lesson._id && !lesson.tempId ? 'update' : 'create'} lesson`);
+      }
+      
+      const result = await response.json();
+      return { ...result, tempId, moduleId: lesson.moduleId };
+    },
+    onSuccess: (data) => {
+      // If this was a new lesson with a tempId, update the ID in the modules state
+      if (data.tempId) {
+        setModules(prevModules => 
+          prevModules.map(module => 
+            module._id === data.moduleId 
+              ? { 
+                  ...module, 
+                  lessons: module.lessons.map(lesson => 
+                    lesson._id === data.tempId 
+                      ? { ...lesson, _id: data._id } 
+                      : lesson
+                  ) 
+                } 
+              : module
+          )
+        );
+      }
+      
+      toast({
+        title: "Success",
+        description: `Lesson ${data.tempId ? "created" : "updated"} successfully.`
+      });
+      
+      // Refresh data from server to ensure everything is in sync
+      queryClient.invalidateQueries({ queryKey: ['/api/courses', courseId, 'curriculum'] });
+    },
+    onError: (error) => {
+      console.error("Error saving lesson:", error);
+      toast({ 
+        title: "Error", 
+        description: "Failed to save lesson.", 
+        variant: "destructive" 
+      });
+    }
+  });
+
+  // Delete Lesson mutation
+  const lessonDeleteMutation = useMutation({
+    mutationFn: async ({ moduleId, lessonId }: { moduleId: string, lessonId: string }) => {
+      const response = await apiRequest(
+        `/api/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}`,
+        {},
+        { method: 'DELETE' }
+      );
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete lesson');
+      }
+      
+      return { moduleId, lessonId };
+    },
+    onSuccess: ({ moduleId, lessonId }) => {
+      // Optimistic update
+      setModules(prevModules => prevModules.map(module => 
+        module._id === moduleId 
+          ? { 
+              ...module, 
+              lessons: module.lessons.filter(lesson => lesson._id !== lessonId)
+            } 
+          : module
+      ));
+      
+      toast({
+        title: "Lesson Deleted",
+        description: "Lesson has been deleted successfully."
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/courses', courseId, 'curriculum'] });
+    },
+    onError: (error) => {
+      console.error("Error deleting lesson:", error);
+      toast({ 
+        title: "Error", 
+        description: "Failed to delete lesson.", 
         variant: "destructive" 
       });
     }
   });
 
   // Module functions
-  const addModule = () => {
-    const newModuleId = Date.now(); // Temporary ID until saved
-    const newModule: Module = {
-      id: newModuleId,
+  const addModule = async () => {
+    const newModule = {
       title: "New Module",
       order: modules.length + 1,
+    };
+    
+    // Optimistic update first
+    const tempId = Date.now().toString();
+    const optimisticModule = {
+      ...newModule,
+      _id: tempId,
       lessons: []
     };
     
-    setModules([...modules, newModule]);
-    // Expand the new module
-    setExpandedModules({
-      ...expandedModules,
-      [newModuleId.toString()]: true
+    setModules(prev => [...prev, optimisticModule]);
+    setExpandedModules(prev => ({
+      ...prev,
+      [tempId]: true
+    }));
+
+    // Then save to server
+    await moduleUpsertMutation.mutateAsync({
+      ...newModule,
+      tempId: tempId
     });
   };
 
-  const toggleModuleExpanded = (moduleId: number) => {
+  const toggleModuleExpanded = (moduleId: string) => {
     setExpandedModules({
       ...expandedModules,
       [moduleId.toString()]: !expandedModules[moduleId.toString()]
     });
   };
 
-  const updateModuleTitle = (moduleId: number, title: string) => {
+  const updateModuleTitle = (moduleId: string, title: string) => {
+    // Update locally
     setModules(modules.map(module => 
-      module.id === moduleId ? { ...module, title } : module
+      module._id === moduleId ? { ...module, title } : module
     ));
   };
 
-  const deleteModule = (moduleId: number) => {
-    setModules(modules.filter(module => module.id !== moduleId));
+  const saveModuleTitle = (moduleId: string) => {
+    const module = modules.find(m => m._id === moduleId);
+    if (!module) return;
+    
+    moduleUpsertMutation.mutate({
+      _id: module._id,
+      title: module.title,
+      order: module.order
+    });
+  };
+
+  const deleteModule = (moduleId: string) => {
+    if (confirm("Are you sure you want to delete this module? All lessons will be deleted.")) {
+      moduleDeleteMutation.mutate(moduleId);
+    }
   };
 
   // Lesson functions
-  const addLesson = (moduleId: number) => {
-    const moduleIndex = modules.findIndex(m => m.id === moduleId);
+  const addLesson = (moduleId: string) => {
+    const moduleIndex = modules.findIndex(m => m._id === moduleId);
     if (moduleIndex === -1) return;
 
     const lessonOrder = modules[moduleIndex].lessons.length + 1;
@@ -170,50 +351,48 @@ export default function CourseCurriculumForm({
       videoUrl: "",
       content: "",
       order: lessonOrder,
-      duration: ""
+      duration: "",
+      tempId: undefined,
     });
     
     setIsLessonModalOpen(true);
   };
 
-  const editLesson = (moduleId: number, lesson: Lesson) => {
+  const editLesson = (moduleId: string, lesson: Lesson) => {
     setEditingLesson({
-      id: lesson.id,
+      _id: lesson._id,
       moduleId,
       title: lesson.title,
       videoUrl: lesson.videoUrl || "",
       content: lesson.content || "",
       order: lesson.order,
-      duration: lesson.duration || ""
+      duration: lesson.duration || "",
+      tempId: undefined,
     });
     
     setIsLessonModalOpen(true);
   };
 
-  const deleteLesson = (moduleId: number, lessonId: number) => {
-    setModules(modules.map(module => 
-      module.id === moduleId 
-        ? { 
-            ...module, 
-            lessons: module.lessons.filter(lesson => lesson.id !== lessonId)
-          } 
-        : module
-    ));
+  const deleteLesson = (moduleId: string, lessonId: string) => {
+    if (confirm("Are you sure you want to delete this lesson?")) {
+      lessonDeleteMutation.mutate({ moduleId, lessonId });
+    }
   };
 
   const handleLessonSave = async (lessonData: EditingLesson): Promise<void> => {
-    const moduleIndex = modules.findIndex(m => m.id === lessonData.moduleId);
+    // Optimistic update
+    const moduleIndex = modules.findIndex(m => m._id === lessonData.moduleId);
     if (moduleIndex === -1) return;
     
     const updatedModules = [...modules];
     const module = updatedModules[moduleIndex];
     
-    if (lessonData.id) {
+    if (lessonData._id) {
       // Update existing lesson
       updatedModules[moduleIndex] = {
         ...module,
         lessons: module.lessons.map(lesson => 
-          lesson.id === lessonData.id 
+          lesson._id === lessonData._id 
             ? { 
                 ...lesson, 
                 title: lessonData.title,
@@ -225,14 +404,14 @@ export default function CourseCurriculumForm({
         )
       };
     } else {
-      // Add new lesson
-      const newLessonId = Date.now(); // Temporary ID until saved
+      // Add new lesson with temporary ID
+      const tempId = Date.now().toString();
       updatedModules[moduleIndex] = {
         ...module,
         lessons: [
           ...module.lessons,
           {
-            id: newLessonId,
+            _id: tempId,
             title: lessonData.title,
             videoUrl: lessonData.videoUrl,
             content: lessonData.content,
@@ -241,9 +420,20 @@ export default function CourseCurriculumForm({
           }
         ]
       };
+      
+      // Add tempId to lessonData for tracking
+      lessonData = {
+        ...lessonData,
+        tempId: tempId
+      };
     }
     
     setModules(updatedModules);
+    
+    // Save to server
+    await lessonUpsertMutation.mutateAsync(lessonData);
+    
+    // Close modal
     setIsLessonModalOpen(false);
     setEditingLesson(null);
   };
@@ -286,7 +476,7 @@ export default function CourseCurriculumForm({
             <div className="space-y-4">
               {/* Modules Accordion */}
               {modules.map((module) => (
-                <div key={module.id} className="border rounded-lg">
+                <div key={module._id} className="border rounded-lg">
                   <div 
                     className="p-4 bg-slate-50 rounded-t-lg flex items-center justify-between cursor-pointer"
                     onClick={(e) => {
@@ -299,11 +489,11 @@ export default function CourseCurriculumForm({
                       ) {
                         return;
                       }
-                      toggleModuleExpanded(module.id);
+                      toggleModuleExpanded(module._id);
                     }}
                   >
                     <div className="flex items-center flex-1">
-                      {expandedModules[module.id.toString()] ? (
+                      {expandedModules[module._id] ? (
                         <ChevronDown className="h-5 w-5 mr-2 text-gray-500" />
                       ) : (
                         <ChevronRight className="h-5 w-5 mr-2 text-gray-500" />
@@ -311,7 +501,8 @@ export default function CourseCurriculumForm({
                       <input
                         type="text"
                         value={module.title}
-                        onChange={(e) => updateModuleTitle(module.id, e.target.value)}
+                        onChange={(e) => updateModuleTitle(module._id, e.target.value)}
+                        onBlur={() => saveModuleTitle(module._id)}
                         className="text-lg font-semibold bg-transparent border-0 focus:outline-none focus:ring-0 flex-1"
                         placeholder="Module Title"
                         onClick={(e) => e.stopPropagation()} // Prevent collapse when editing title
@@ -326,7 +517,7 @@ export default function CourseCurriculumForm({
                         size="sm"
                         onClick={(e) => {
                           e.stopPropagation(); // Prevent collapse toggle
-                          addLesson(module.id);
+                          addLesson(module._id);
                         }}
                       >
                         <Plus className="mr-1 h-3 w-3" /> Add Lesson
@@ -337,14 +528,14 @@ export default function CourseCurriculumForm({
                         className="text-red-500 hover:text-red-700 hover:bg-red-50"
                         onClick={(e) => {
                           e.stopPropagation(); // Prevent collapse toggle
-                          deleteModule(module.id);
+                          deleteModule(module._id);
                         }}
                       >
                         <Trash className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
-                  {expandedModules[module.id.toString()] && (
+                  {expandedModules[module._id] && (
                     <div className="p-4">
                       {module.lessons.length === 0 ? (
                         <div className="text-center py-4 border border-dashed rounded-lg">
@@ -354,7 +545,7 @@ export default function CourseCurriculumForm({
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => addLesson(module.id)}
+                            onClick={() => addLesson(module._id)}
                           >
                             <Plus className="mr-1 h-3 w-3" /> Add Lesson
                           </Button>
@@ -363,7 +554,7 @@ export default function CourseCurriculumForm({
                         <div className="divide-y">
                           {module.lessons.map((lesson) => (
                             <div
-                              key={lesson.id}
+                              key={lesson._id}
                               className="py-3 flex items-center justify-between"
                             >
                               <div className="flex items-center space-x-2">
@@ -386,7 +577,7 @@ export default function CourseCurriculumForm({
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => editLesson(module.id, lesson)}
+                                  onClick={() => editLesson(module._id, lesson)}
                                 >
                                   Edit
                                 </Button>
@@ -394,7 +585,7 @@ export default function CourseCurriculumForm({
                                   variant="ghost"
                                   size="sm"
                                   className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                                  onClick={() => deleteLesson(module.id, lesson.id)}
+                                  onClick={() => deleteLesson(module._id, lesson._id)}
                                 >
                                   <Trash className="h-3 w-3" />
                                 </Button>
@@ -415,24 +606,6 @@ export default function CourseCurriculumForm({
             </div>
           )}
         </CardContent>
-        <CardFooter className="flex justify-end space-x-2">
-          <Button 
-            type="button" 
-            disabled={isSubmitting}
-            onClick={() => saveCurriculumMutation.mutate()}
-          >
-            {isSubmitting ? (
-              <>
-                <span className="mr-2">
-                  <div className="h-4 w-4 border-2 border-t-white border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin inline-block"></div>
-                </span>
-                Saving Curriculum...
-              </>
-            ) : (
-              "Save Curriculum"
-            )}
-          </Button>
-        </CardFooter>
       </Card>
 
       {/* Lesson Edit Modal */}

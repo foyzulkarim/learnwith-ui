@@ -14,6 +14,7 @@ import LessonList from "../components/LessonList";
 import AIAssistant from "../../ai-assistant/components/AIAssistant";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "../../auth/context/AuthContext";
+import { isLocalDevelopment } from "@/lib/environment";
 
 // Helper function to safely get lesson ID regardless of property name
 const getLessonId = (lesson: any): string => {
@@ -47,7 +48,7 @@ interface Course {
   _id: string;
   title: string;
   description: string;
-  thumbnail: string;
+  thumbnailUrl: string;
   instructor: string;
 }
 
@@ -63,12 +64,16 @@ export default function LessonPlayerPage() {
   const [activeTab, setActiveTab] = useState("overview");
   const [quizAnswers, setQuizAnswers] = useState<Record<number, string>>({});
   const [noteContent, setNoteContent] = useState("");
-  const [lessonModuleId, setLessonModuleId] = useState<string | null>(() => {
-    // For debugging
-    console.log("Initial moduleId from URL:", moduleId);
-    return moduleId !== "0" ? moduleId : null;
-  });
-  const { isLoggedIn } = useAuth();
+  // Always use the module ID directly from URL params 
+  // Use undefined if it's "0" (indicating not provided) to avoid type issues
+  const lessonModuleId = moduleId !== "0" ? moduleId : undefined;
+  const { isLoggedIn, isLocalDev } = useAuth();
+  const effectiveIsLoggedIn = isLoggedIn || isLocalDev;
+  
+  // Debug log URL parameters
+  useEffect(() => {
+    console.log("URL parameters:", { courseId, moduleId, lessonId, lessonModuleId });
+  }, [courseId, moduleId, lessonId, lessonModuleId]);
 
   // Course data query
   const { data: course } = useQuery<Course>({
@@ -82,10 +87,16 @@ export default function LessonPlayerPage() {
     enabled: !!courseId,
   });
   
-  // Get current lesson data using the new API structure
-  const { data: currentLesson } = useQuery<Lesson>({
-    queryKey: [`/api/courses/${courseId}/modules/${lessonModuleId}/lessons/${lessonId}`],
-    enabled: !!courseId && !!lessonModuleId && !!lessonId,
+  // Get current lesson data using the new API structure with URL parameters
+  const { data: currentLesson, isError: lessonError } = useQuery<Lesson>({
+    queryKey: [`/api/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}`],
+    enabled: !!courseId && moduleId !== "0" && lessonId !== "0",
+  });
+  
+  // Fallback approach if direct URL parameters fail (might happen with legacy URLs)
+  const { data: fallbackLesson } = useQuery<Lesson>({
+    queryKey: [`/api/courses/${courseId}/lessons/${lessonId}`],
+    enabled: !!courseId && moduleId === "0" && lessonId !== "0" && lessonError === true,
   });
   
   // Quiz questions for the current lesson
@@ -97,36 +108,36 @@ export default function LessonPlayerPage() {
   // Notes for the current lesson
   // const { data: note } = useQuery<any>({
   //   queryKey: [`/api/courses/${courseId}/modules/${lessonModuleId}/lessons/${lessonId}/note`],
-  //   enabled: !!courseId && !!lessonModuleId && !!lessonId && isLoggedIn,
+  //   enabled: !!courseId && !!lessonModuleId && !!lessonId && effectiveIsLoggedIn,
   // });
 
-  // Save note mutation
+  // Save note mutation - use moduleId from URL directly
   const saveNoteMutation = useMutation({
     mutationFn: async (content: string) => {
-      if (!lessonModuleId) return Promise.reject("Module ID not found");
+      if (moduleId === "0") return Promise.reject("Module ID not found in URL");
       
       return apiRequest(
-        `/api/courses/${courseId}/modules/${lessonModuleId}/lessons/${lessonId}/note`, 
+        `/api/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/note`, 
         { content }, 
         { method: "POST" }
       );
     },
     onSuccess: () => {
-      if (lessonModuleId) {
+      if (moduleId !== "0") {
         queryClient.invalidateQueries({ 
-          queryKey: [`/api/courses/${courseId}/modules/${lessonModuleId}/lessons/${lessonId}/note`] 
+          queryKey: [`/api/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/note`] 
         });
       }
     },
   });
 
-  // Check quiz answers mutation
+  // Check quiz answers mutation - use moduleId from URL directly
   const checkQuizAnswersMutation = useMutation({
     mutationFn: async (answers: Record<number, string>) => {
-      if (!lessonModuleId) return Promise.reject("Module ID not found");
+      if (moduleId === "0") return Promise.reject("Module ID not found in URL");
       
       return apiRequest(
-        `/api/courses/${courseId}/modules/${lessonModuleId}/lessons/${lessonId}/quiz/check`, 
+        `/api/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/quiz/check`, 
         { answers }, 
         { method: "POST" }
       );
@@ -158,27 +169,34 @@ export default function LessonPlayerPage() {
   // Extract modules from curriculum data
   const modules = curriculumData?.modules || [];
   
-  // Find the module ID for the current lesson if it's not in the URL (legacy route)
+  // We now directly use moduleId from URL params
+  // This effect just ensures lessons have moduleId property set for data consistency
   useEffect(() => {
     // Only attempt to find module if we have modules data and need to find it
-    if (moduleId === "0" && modules.length > 0 && lessonId !== "0") {
-      // Try to find which module contains this lesson
+    if (modules.length > 0 && lessonId !== "0") {
+      // Ensure all lessons have their module IDs properly set
       for (const module of modules) {
-        const foundLesson = module.lessons.find(lesson => 
-          getLessonId(lesson) === lessonId
-        );
-        
-        if (foundLesson) {
-          console.log(`Found lesson ${lessonId} in module ${module._id}`);
-          
-          // Make sure the lesson has moduleId property set
-          if (!foundLesson.moduleId) {
-            foundLesson.moduleId = module._id;
-            foundLesson.moduleTitle = module.title;
+        for (const lesson of module.lessons) {
+          if (!lesson.moduleId) {
+            lesson.moduleId = module._id;
+            lesson.moduleTitle = module.title;
           }
+        }
+      }
+      
+      // Log for debugging purposes if this is a legacy route without module ID
+      if (moduleId === "0") {
+        console.log("Legacy route detected - module ID not in URL");
+        // Try to find which module contains this lesson for diagnostic purposes
+        for (const module of modules) {
+          const foundLesson = module.lessons.find(lesson => 
+            getLessonId(lesson) === lessonId
+          );
           
-          setLessonModuleId(module._id);
-          break;
+          if (foundLesson) {
+            console.log(`Found lesson ${lessonId} in module ${module._id}`);
+            break;
+          }
         }
       }
     }
@@ -242,16 +260,22 @@ export default function LessonPlayerPage() {
     }
   }, [curriculumData]);
 
+  // Determine the effective lesson (use fallback if needed)
+  const effectiveLesson = currentLesson || fallbackLesson;
+  
   // Handle loading and error states
-  const isLoading = !course || !currentLesson || !lessonModuleId;
+  const isLoading = !course || !effectiveLesson;
+  const isMissingModuleId = moduleId === "0" && lessonId !== "0";
   
   if (isLoading) {
     return <div className="py-10 bg-white text-center">
       <div className="animate-pulse">
         <div className="h-8 bg-gray-200 rounded w-48 mx-auto mb-4"></div>
         <div className="h-4 bg-gray-200 rounded w-64 mx-auto"></div>
-        {!lessonModuleId && modules.length > 0 && (
-          <div className="mt-4 text-amber-600 text-sm">Finding the correct module for this lesson...</div>
+        {isMissingModuleId && modules.length > 0 && (
+          <div className="mt-4 text-amber-600 text-sm">
+            Module ID missing from URL - this might cause issues with API requests
+          </div>
         )}
       </div>
     </div>;
@@ -286,13 +310,12 @@ export default function LessonPlayerPage() {
           >
             <ChevronLeft className="h-5 w-5" />
             <span className="ml-1 text-sm">Back to course</span>
-          </Link>
-          <div>
-            <h1 className="text-lg font-semibold tracking-tight">{course.title}</h1>
-            <div className="flex items-center text-sm text-gray-500">
-              <span>{currentLesson?.title}</span>
-            </div>
-          </div>
+          </Link>              <div>
+                <h1 className="text-lg font-semibold tracking-tight">{course.title}</h1>
+                <div className="flex items-center text-sm text-gray-500">
+                  <span>{effectiveLesson?.title}</span>
+                </div>
+              </div>
         </div>
         <div className="flex items-center gap-3">
           <button className="text-gray-600 hover:text-primary transition-colors">
@@ -309,8 +332,8 @@ export default function LessonPlayerPage() {
           <div className="bg-black rounded-2xl shadow-lg overflow-hidden mb-6 relative">
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10 pointer-events-none" />
             <VideoPlayer 
-              videoUrl={currentLesson?.videoUrl || "https://demo-videos.vercel.app/placeholder.mp4"} 
-              thumbnailUrl={course.thumbnail}
+              videoUrl={effectiveLesson?.videoUrl || "https://demo-videos.vercel.app/placeholder.mp4"} 
+              thumbnailUrl={course.thumbnailUrl}
             />
           </div>
           {/* Lesson details area */}
@@ -327,7 +350,7 @@ export default function LessonPlayerPage() {
                     <MessageSquare className="h-4 w-4" /> Notes
                   </span>
                 </TabsTrigger>
-                {isLoggedIn && (
+                {effectiveIsLoggedIn && (
                   <TabsTrigger value="resources" className="px-6 py-3 data-[state=active]:text-primary data-[state=active]:border-b-2 data-[state=active]:border-primary font-medium transition-colors data-[state=active]:bg-primary/10 rounded-t-lg">
                     <span className="flex items-center gap-2">
                       <ListChecks className="h-4 w-4" /> Resources
@@ -342,9 +365,9 @@ export default function LessonPlayerPage() {
               </TabsList>
               <TabsContent value="overview">
                 <div className="bg-white rounded-xl shadow p-6 mb-8">
-                  <h2 className="text-xl font-semibold mb-4">Current Lesson: {currentLesson?.title}</h2>
+                  <h2 className="text-xl font-semibold mb-4">Current Lesson: {effectiveLesson?.title}</h2>
                   <div className="text-gray-700 mb-6 text-base">
-                    {currentLesson?.content || (
+                    {effectiveLesson?.content || (
                       <p>
                         In this lesson, you'll learn core concepts that are essential for mastering the subject.
                         Follow along with the video and complete the exercises to reinforce your learning.
@@ -407,11 +430,11 @@ export default function LessonPlayerPage() {
                       <Button 
                         className="mt-6 bg-primary hover:bg-primary/90 transition-colors shadow"
                         onClick={handleCheckAnswers}
-                        disabled={checkQuizAnswersMutation.isPending || !isLoggedIn}
+                        disabled={checkQuizAnswersMutation.isPending || !effectiveIsLoggedIn}
                       >
                         {checkQuizAnswersMutation.isPending ? "Checking..." : "Check Answers"}
                       </Button>
-                      {!isLoggedIn && <div className="text-xs text-red-500 mt-2">Login to check answers</div>}
+                      {!effectiveIsLoggedIn && <div className="text-xs text-red-500 mt-2">Login to check answers</div>}
                     </div>
                   )}
                 </div>
@@ -424,21 +447,21 @@ export default function LessonPlayerPage() {
                     placeholder="Add your notes for this lesson here..."
                     value={noteContent}
                     onChange={e => setNoteContent(e.target.value)}
-                    disabled={!isLoggedIn}
+                    disabled={!effectiveIsLoggedIn}
                   />
-                  {!isLoggedIn && <div className="text-xs text-red-500 mt-2">Login to take notes</div>}
+                  {!effectiveIsLoggedIn && <div className="text-xs text-red-500 mt-2">Login to take notes</div>}
                   <Button 
                     variant="secondary" 
                     className="mt-3 bg-gray-100 hover:bg-gray-200 text-foreground flex items-center gap-2 shadow"
                     onClick={handleSaveNote}
-                    disabled={saveNoteMutation.isPending || !isLoggedIn}
+                    disabled={saveNoteMutation.isPending || !effectiveIsLoggedIn}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                     {saveNoteMutation.isPending ? "Saving..." : "Save Notes"}
                   </Button>
                 </div>
               </TabsContent>
-              {isLoggedIn && (
+              {effectiveIsLoggedIn && (
                 <TabsContent value="resources">
                   <div className="bg-white rounded-xl shadow p-6">
                     <h3 className="text-lg font-semibold mb-4">Course Resources</h3>
@@ -463,9 +486,9 @@ export default function LessonPlayerPage() {
               )}
               <TabsContent value="ai-assistant">
                 <div className="h-[500px] overflow-hidden bg-white rounded-xl shadow p-4">
-                  <AIAssistant lessonTitle={currentLesson?.title} disabled={!isLoggedIn} />
+                  <AIAssistant lessonTitle={effectiveLesson?.title} disabled={!effectiveIsLoggedIn} />
                 </div>
-                {!isLoggedIn && <div className="text-xs text-red-500 mt-2">Login to chat with AI</div>}
+                {!effectiveIsLoggedIn && <div className="text-xs text-red-500 mt-2">Login to chat with AI</div>}
               </TabsContent>
             </Tabs>
           </div>
@@ -481,9 +504,11 @@ export default function LessonPlayerPage() {
                 moduleId: lesson.moduleId || module._id
               }))
             }))}
+            // The LessonList component will use URL params directly,
+            // but we still pass these as fallbacks
             currentLessonId={lessonId}
-            currentModuleId={lessonModuleId}
-            isLocked={!isLoggedIn} 
+            currentModuleId={moduleId}
+            isLocked={!effectiveIsLoggedIn} 
           />
         </div>
       </div>

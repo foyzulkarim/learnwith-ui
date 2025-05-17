@@ -10,9 +10,9 @@ import { CATEGORIES } from "@/lib/constants";
 
 // Inline types for Course and Category
 interface Course {
-  id: number;
+  _id: string;
   title: string;
-  thumbnail: string;
+  thumbnailUrl: string;
   instructor: string;
   instructorAvatar?: string;
   categoryId: number;
@@ -24,6 +24,14 @@ interface Course {
   totalDuration?: string;
   progress?: number;
   completedLessons?: number;
+}
+
+// API response interface
+interface CourseResponse {
+  courses: Course[];
+  total: number;
+  page: number;
+  limit: string | number;
 }
 
 interface Category {
@@ -65,12 +73,14 @@ export default function CourseGrid({
   if (currentLimit) queryParams.append("limit", currentLimit.toString());
   const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
 
-  const { data: courses, isLoading } = useQuery<Course[]>({
+  const { data, isLoading } = useQuery<CourseResponse>({
     queryKey: [endpoint, searchQuery, selectedCategory, currentLimit],
     queryFn: async () => {
-      return fetcher<Course[]>(`${endpoint}${queryString}`);
+      return fetcher<CourseResponse>(`${endpoint}${queryString}`);
     },
   });
+
+  const courses = data?.courses || [];
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -143,10 +153,10 @@ export default function CourseGrid({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {courses?.map((course) => (
               <CourseCard
-                key={course.id}
-                id={course.id}
+                key={course._id}
+                _id={course._id}
                 title={course.title}
-                thumbnail={course.thumbnail}
+                thumbnailUrl={course.thumbnailUrl}
                 instructor={course.instructor}
                 instructorAvatar={course.instructorAvatar}
                 category={categories.find(c => c.id === course.categoryId)?.name || ""}

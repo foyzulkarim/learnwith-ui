@@ -38,7 +38,7 @@ interface Course {
   _id?: string;
   title: string;
   description: string;
-  thumbnail: string;
+  thumbnailUrl: string;
   instructor: string;
   instructorAvatar?: string;
   categoryId: number;
@@ -58,31 +58,43 @@ export default function CourseDetailPage() {
   const params = useParams();
   const courseId = params.courseId || "";
   const [lessonId, setLessonId] = useState<string | undefined>(undefined);
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, isLocalDev } = useAuth();
+  const effectiveIsLoggedIn = isLoggedIn || isLocalDev;
 
   const { data: course, isLoading: isLoadingCourse } = useQuery<Course>({
     queryKey: [`/api/courses/${courseId}`],
     queryFn: () => fetcher<Course>(`/api/courses/${courseId}`),
     enabled: !!courseId,
+    staleTime: 0, // Data is immediately considered stale
+    refetchOnMount: 'always', // Always refetch when component mounts
+    gcTime: 1000, // Short cache time (1 second)
   });
   
   const { data: curriculumData, isLoading: isLoadingModules } = useQuery<CurriculumData>({
     queryKey: [`/api/courses/${courseId}/curriculum`],
     queryFn: () => fetcher<CurriculumData>(`/api/courses/${courseId}/curriculum`),
     enabled: !!courseId,
+    staleTime: 0, // Data is immediately considered stale
+    refetchOnMount: 'always', // Always refetch when component mounts  
+    gcTime: 1000, // Short cache time (1 second)
   });
 
   // Extract modules from curriculum data
   const modules = curriculumData?.modules || [];
+  
+  // Log curriculum data for debugging
+  console.log('Curriculum data:', curriculumData);
 
-  // Flatten all lessons from all modules
+  // Safely flatten all lessons from all modules
   const allLessons = modules.flatMap((module: Module) => 
-    module.lessons.map((lesson: Lesson) => ({
+    (module.lessons || []).map((lesson: Lesson) => ({
       ...lesson,
       moduleId: module._id,
       moduleTitle: module.title
     }))
   );
+
+  console.log('All lessons:', allLessons);
 
   // Get first lesson for "Start First Lesson" button
   const firstLesson = allLessons.length > 0 ? allLessons.sort((a: Lesson, b: Lesson) => a.order - b.order)[0] : null;
@@ -168,14 +180,18 @@ export default function CourseDetailPage() {
           <div className="lg:w-8/12 lg:pr-10">
             <div className="relative pb-[56.25%] bg-gray-100 rounded-lg mb-8 overflow-hidden shadow-md">
               <img 
-                src={course.thumbnail || "https://via.placeholder.com/800x450?text=Course+Thumbnail"} 
+                src={course.thumbnailUrl || "https://via.placeholder.com/800x450?text=Course+Thumbnail"} 
                 alt={course.title} 
                 className="absolute inset-0 w-full h-full object-cover" 
               />
               <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
                 <div className="text-white text-center p-4">
                   <h3 className="text-xl font-bold mb-2">Start Learning</h3>
-                  <p className="mb-4">Select a lesson from the curriculum to begin</p>
+                  <p className="mb-4">
+                    {allLessons.length > 0 
+                      ? "Select a lesson from the curriculum to begin" 
+                      : "This course doesn't have any lessons yet"}
+                  </p>
                   <Button 
                     className="bg-primary hover:bg-primary/90" 
                     onClick={() => {
@@ -185,7 +201,7 @@ export default function CourseDetailPage() {
                     }}
                     disabled={!firstLesson}
                   >
-                    Start First Lesson
+                    {allLessons.length > 0 ? "Start First Lesson" : "No Lessons Available"}
                   </Button>
                 </div>
               </div>
@@ -240,12 +256,20 @@ export default function CourseDetailPage() {
             </div>
           </div>
           <div className="lg:w-4/12">
-            <LessonList 
-              courseId={courseId}
-              modules={modules || []}
-              currentLessonId={lessonId}
-              isLocked={!isLoggedIn}
-            />
+            {modules.length > 0 ? (
+              <LessonList 
+                courseId={courseId}
+                modules={modules}
+                currentLessonId={lessonId}
+                isLocked={!effectiveIsLoggedIn}
+              />
+            ) : (
+              <div className="bg-white rounded-lg shadow p-6">
+                <h3 className="text-lg font-semibold mb-3">Curriculum</h3>
+                <p className="text-gray-500">This course doesn't have any content yet.</p>
+                <p className="text-gray-500 mt-2">Check back soon for updates!</p>
+              </div>
+            )}
           </div>
         </div>
       </div>

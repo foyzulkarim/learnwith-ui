@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { api } from '@/lib/api';
 import { useLocation } from 'wouter';
+import { isLocalDevelopment } from '@/lib/environment';
 
 // Define the type for user data
 export interface User {
@@ -20,7 +21,16 @@ interface AuthContextType {
   login: (provider: 'google') => void;
   register: (provider: 'google') => void;
   logout: () => Promise<void>;
+  isLocalDev: boolean;
 }
+
+// Mock user for local development
+const mockDevUser: User = {
+  id: 'dev-user-123',
+  name: 'Local Developer',
+  email: 'dev@localhost',
+  role: 'admin',
+};
 
 // Create the context with default values
 const AuthContext = createContext<AuthContextType>({
@@ -31,6 +41,7 @@ const AuthContext = createContext<AuthContextType>({
   login: () => {},
   register: () => {},
   logout: async () => {},
+  isLocalDev: false,
 });
 
 // Custom hook to use the auth context
@@ -38,9 +49,10 @@ export const useAuth = () => useContext(AuthContext);
 
 // Auth provider component
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true); // Start with loading true to check auth on mount
+  const isLocalDev = isLocalDevelopment();
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(isLocalDev);
+  const [user, setUser] = useState<User | null>(isLocalDev ? mockDevUser : null);
+  const [isLoading, setIsLoading] = useState<boolean>(!isLocalDev); // Don't show loading if in local dev
   const [error, setError] = useState<string | null>(null);
   const [, navigate] = useLocation();
 
@@ -61,11 +73,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Check auth status on component mount
   useEffect(() => {
+    // Skip auth check if in local development
+    if (isLocalDev) return;
+    
     const checkAuthStatus = async () => {
       try {
         const response = await api.getUser();
         if (response) {
-          setUser(response);
+          setUser(response as User); // Cast the response to User type
           setIsLoggedIn(true);
         }
       } catch (err) {
@@ -77,10 +92,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     checkAuthStatus();
-  }, []);
+  }, [isLocalDev]);
 
   // Login function - redirects to OAuth provider
   const login = (provider: 'google') => {
+    // If in local dev, simulate successful login
+    if (isLocalDev) {
+      setUser(mockDevUser);
+      setIsLoggedIn(true);
+      navigate('/dashboard');
+      return;
+    }
+    
     setError(null);
     
     // Redirect to Google OAuth endpoint
@@ -96,6 +119,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Logout function
   const logout = async () => {
+    // If in local dev, simulate logout
+    if (isLocalDev) {
+      // We don't actually log out in dev mode
+      // Just simulate navigation
+      navigate('/');
+      return Promise.resolve();
+    }
+    
     setIsLoading(true);
     try {
       await api.logout();
@@ -120,7 +151,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         error, 
         login, 
         register, 
-        logout 
+        logout,
+        isLocalDev
       }}
     >
       {children}

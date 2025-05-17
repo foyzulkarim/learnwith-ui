@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "wouter";
+import { Link, useParams } from "wouter";
 import { 
   Accordion,
   AccordionContent,
@@ -21,6 +21,8 @@ interface Lesson {
   isCompleted: boolean;
   order: number;
   content?: string;
+  // The moduleId can be used to reference the parent module
+  // However, we should primarily rely on the module context where the lesson appears
   moduleId?: string;
   moduleTitle?: string;
 }
@@ -44,11 +46,29 @@ interface LessonListProps {
 
 export default function LessonList({ courseId, modules, currentLessonId, currentModuleId, isLocked = false }: LessonListProps) {
   const [expandedModules, setExpandedModules] = useState<string[]>([]);
+  
+  // Get current lesson and module directly from URL params - this ensures we always use the correct IDs
+  const params = useParams();
+  const urlCourseId = params.courseId;
+  const urlModuleId = params.moduleId;
+  const urlLessonId = params.lessonId;
+  
+  // Use URL params if available, otherwise fall back to props
+  const effectiveCourseId = urlCourseId || courseId;
+  const effectiveModuleId = urlModuleId || currentModuleId;
+  const effectiveLessonId = urlLessonId || currentLessonId;
 
   // Add logging to debug the data
   useEffect(() => {
-    console.log("LessonList received data:", { courseId, modules, currentLessonId, currentModuleId, isLocked });
-    if (!courseId) {
+    console.log("LessonList data:", { 
+      propsData: { courseId, currentModuleId, currentLessonId },
+      urlData: { urlCourseId, urlModuleId, urlLessonId },
+      effectiveData: { effectiveCourseId, effectiveModuleId, effectiveLessonId },
+      modules: modules?.length || 0,
+      isLocked
+    });
+    
+    if (!effectiveCourseId) {
       console.error("Warning: courseId is undefined or empty in LessonList component");
     }
     if (modules && modules.length > 0) {
@@ -63,7 +83,7 @@ export default function LessonList({ courseId, modules, currentLessonId, current
         console.error("Warning: Found lessons without _id property:", missingIds);
       }
     }
-  }, [courseId, modules, currentLessonId, currentModuleId, isLocked]);
+  }, [courseId, modules, currentLessonId, currentModuleId, urlCourseId, urlModuleId, urlLessonId, isLocked]);
 
   // Expand all modules by default
   useEffect(() => {
@@ -152,18 +172,22 @@ export default function LessonList({ courseId, modules, currentLessonId, current
                 <ul className="divide-y divide-gray-200">
                   {module.lessons.map((lesson) => {
                     const lessonId = getLessonId(lesson);
-                    const moduleIdForUrl = lesson.moduleId || module._id;
-                    // Use only lesson ID for matching since module ID might be causing issues
-                    const isActive = lessonId === currentLessonId;
+                    // Always use the current module's ID for the lesson URL
+                    // This ensures that the lesson is associated with the correct module
+                    const moduleIdForUrl = module._id;
+                    // Use URL parameters to determine active lesson for maximum reliability
+                    const isActive = lessonId === effectiveLessonId && module._id === effectiveModuleId;
                     console.log("isActive", {isActive, lessonId, currentLessonId});
                     
                     // Debug logs
-                    if (lessonId === currentLessonId) {
+                    if (lessonId === effectiveLessonId) {
                       console.log("Found lesson with matching ID:", {
                         lessonId,
-                        currentLessonId,
+                        effectiveLessonId,
                         moduleIdForUrl,
-                        currentModuleId,
+                        effectiveModuleId,
+                        urlLessonId,
+                        urlModuleId,
                         isActive,
                         lessonTitle: lesson.title
                       });
@@ -174,7 +198,12 @@ export default function LessonList({ courseId, modules, currentLessonId, current
                     const showLock = false; // For testing purposes, always show lessons
                     
                     // Create lesson URL only if we have a valid lesson ID
-                    const lessonUrl = lessonId ? `/course/${courseId}/module/${moduleIdForUrl}/lesson/${lessonId}` : "#";
+                    const lessonUrl = lessonId ? `/course/${effectiveCourseId}/module/${moduleIdForUrl}/lesson/${lessonId}` : "#";
+                    
+                    // Debug: Log the URL being used for the lesson to verify correct module ID
+                    if (process.env.NODE_ENV !== 'production') {
+                      console.debug(`Lesson "${lesson.title}" URL: ${lessonUrl} (Module: ${moduleIdForUrl})`);
+                    }
                     
                     return (
                       <li 
@@ -252,9 +281,9 @@ export default function LessonList({ courseId, modules, currentLessonId, current
               return a.order - b.order;
             });
             
-            // Find current lesson index using getLessonId helper
+            // Find current lesson index using getLessonId helper and the URL parameters
             const currentIndex = sortedLessons.findIndex(lesson => 
-              getLessonId(lesson) === currentLessonId
+              getLessonId(lesson) === effectiveLessonId
             );
             
             if (currentIndex >= 0 && currentIndex < sortedLessons.length - 1) {
@@ -264,18 +293,25 @@ export default function LessonList({ courseId, modules, currentLessonId, current
               // Only create the link if we have a valid lesson ID
               if (nextLesson && nextLessonId) {
                 // Find the module that contains this lesson to get moduleId
+                // This ensures we get the correct module for the next lesson
                 const nextLessonModule = modules.find(m => 
                   m.lessons.some(l => getLessonId(l) === nextLessonId)
                 );
-                const moduleIdForNextLesson = nextLesson.moduleId || nextLessonModule?._id;
+                // Always use the module ID from the module that contains the lesson
+                const moduleIdForNextLesson = nextLessonModule?._id;
                 
                 if (!moduleIdForNextLesson) {
                   console.error(`Cannot find module ID for next lesson: ${nextLessonId}`);
                 }
                 
+                // Debug: Log the next lesson URL info
+                if (process.env.NODE_ENV !== 'production') {
+                  console.debug(`Next lesson: "${nextLesson.title}" using module ID: ${moduleIdForNextLesson}`);
+                }
+                
                 return (
                   <Link 
-                    href={`/course/${courseId}/module/${moduleIdForNextLesson}/lesson/${nextLessonId}`} 
+                    href={`/course/${effectiveCourseId}/module/${moduleIdForNextLesson}/lesson/${nextLessonId}`} 
                     className="block text-center bg-primary hover:bg-primary/90 text-white font-medium rounded-lg px-4 py-3 transition-colors"
                   >
                     Next Lesson: {nextLesson.title} <span aria-hidden="true">→</span>

@@ -21,14 +21,14 @@ import {
   Settings,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { fetcher } from "@/lib/api";
 import CourseCreationForm from "../../course/components/CourseCreationForm";
 
 // Define the course type
 interface Course {
-  id: number;
+  _id: string;
   title: string;
   description: string;
-  thumbnail: string;
   thumbnailUrl?: string; // Added for compatibility with CourseDetailsForm
   instructor: string;
   instructorAvatar?: string;
@@ -44,19 +44,26 @@ interface Course {
   isNew?: boolean;
 }
 
+// API response interface
+interface CourseResponse {
+  courses: Course[];
+  total: number;
+  page: number;
+  limit: string | number;
+}
+
 // Component to display course grid with fetched data
 function CoursesGrid({ setActiveTab }: { setActiveTab: (tab: string) => void }) {
   // Fetch courses from the API
-  const { data: courses, isLoading, error, refetch } = useQuery<Course[]>({
+  const { data, isLoading, error, refetch } = useQuery<CourseResponse>({
     queryKey: ["/api/courses"],
-    select: (data) => data.map(course => ({
-      ...course,
-      thumbnailUrl: course.thumbnail // Map thumbnail to thumbnailUrl for compatibility
-    }))
+    queryFn: () => fetcher("/api/courses"),
   });
-  
+
+  const courses = data?.courses || [];
+
   // Function to update course status (publish/unpublish/archive)
-  const updateCourseStatus = async (courseId: number, status: 'draft' | 'published' | 'archived') => {
+  const updateCourseStatus = async (courseId: string, status: 'draft' | 'published' | 'archived') => {
     try {
       await fetch(`/api/creator/courses/${courseId}/status`, {
         method: 'PUT',
@@ -121,9 +128,9 @@ function CoursesGrid({ setActiveTab }: { setActiveTab: (tab: string) => void }) 
   return (
     <div className="space-y-4">
       {courses?.map((course: Course) => (
-        <div key={course.id} className="flex flex-col md:flex-row gap-4 p-4 border rounded-lg hover:shadow-md transition-shadow">
+        <div key={course._id} className="flex flex-col md:flex-row gap-4 p-4 border rounded-lg hover:shadow-md transition-shadow">
           <img 
-            src={course.thumbnail || "https://placehold.co/400x300?text=Course+Thumbnail"} 
+            src={course.thumbnailUrl || "https://placehold.co/400x300?text=Course+Thumbnail"} 
             alt={`${course.title} thumbnail`} 
             className="w-full md:w-48 h-32 object-cover rounded-md"
           />
@@ -168,7 +175,7 @@ function CoursesGrid({ setActiveTab }: { setActiveTab: (tab: string) => void }) 
             </p>
             
             <div className="flex flex-wrap gap-2 mt-4">
-              <Link href={`/creator-dashboard/courses/${course.id}/edit`}>
+              <Link href={`/creator-dashboard/courses/${course._id}/edit`}>
                 <button
                   className="text-sm px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100"
                   onClick={(e) => {
@@ -177,13 +184,13 @@ function CoursesGrid({ setActiveTab }: { setActiveTab: (tab: string) => void }) 
                     // Set the active tab to "create" to show the edit form
                     setActiveTab("create");
                     // Update the URL manually without query parameters
-                    window.history.pushState(null, "", `/creator-dashboard/courses/${course.id}/edit`);
+                    window.history.pushState(null, "", `/creator-dashboard/courses/${course._id}/edit`);
                   }}
                 >
                   Edit
                 </button>
               </Link>
-              <Link href={`/creator-dashboard/courses/${course.id}/detail`}>
+              <Link href={`/creator-dashboard/courses/${course._id}/detail`}>
                 <button
                   className="text-sm px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100"
                   onClick={(e) => {
@@ -192,13 +199,13 @@ function CoursesGrid({ setActiveTab }: { setActiveTab: (tab: string) => void }) 
                     // Set the active tab to "create" to show the edit form
                     setActiveTab("create");
                     // Update the URL manually without query parameters
-                    window.history.pushState(null, "", `/creator-dashboard/courses/${course.id}/detail`);
+                    window.history.pushState(null, "", `/creator-dashboard/courses/${course._id}/detail`);
                   }}
                 >
                   Details
                 </button>
               </Link>
-              <Link href={`/creator-dashboard/courses/${course.id}/curriculum`}>
+              <Link href={`/creator-dashboard/courses/${course._id}/curriculum`}>
                 <button 
                   className="text-sm px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100"
                   onClick={(e) => {
@@ -207,13 +214,13 @@ function CoursesGrid({ setActiveTab }: { setActiveTab: (tab: string) => void }) 
                     // Set the active tab to "create" to show the form
                     setActiveTab("create");
                     // Update the URL manually without query parameters
-                    window.history.pushState(null, "", `/creator-dashboard/courses/${course.id}/curriculum`);
+                    window.history.pushState(null, "", `/creator-dashboard/courses/${course._id}/curriculum`);
                   }}
                 >
                   Curriculum
                 </button>
               </Link>
-              <Link href={`/course-player/${course.id}`}>
+              <Link href={`/course-player/${course._id}`}>
                 <button className="text-sm px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-100">
                   Preview
                 </button>
@@ -222,21 +229,21 @@ function CoursesGrid({ setActiveTab }: { setActiveTab: (tab: string) => void }) 
               {course.status === 'published' ? (
                 <button 
                   className="text-sm px-3 py-1 border border-red-300 text-red-600 rounded-md hover:bg-red-50"
-                  onClick={() => updateCourseStatus(course.id, 'draft')}
+                  onClick={() => updateCourseStatus(course._id, 'draft')}
                 >
                   Unpublish
                 </button>
               ) : course.status === 'archived' ? (
                 <button 
                   className="text-sm px-3 py-1 border border-blue-300 text-blue-600 rounded-md hover:bg-blue-50"
-                  onClick={() => updateCourseStatus(course.id, 'draft')}
+                  onClick={() => updateCourseStatus(course._id, 'draft')}
                 >
                   Restore
                 </button>
               ) : (
                 <button 
                   className="text-sm px-3 py-1 border border-green-300 text-green-600 rounded-md hover:bg-green-50"
-                  onClick={() => updateCourseStatus(course.id, 'published')}
+                  onClick={() => updateCourseStatus(course._id, 'published')}
                 >
                   Publish
                 </button>
@@ -246,7 +253,7 @@ function CoursesGrid({ setActiveTab }: { setActiveTab: (tab: string) => void }) 
               {course.status !== 'archived' && (
                 <button 
                   className="text-sm px-3 py-1 border border-gray-300 text-gray-600 rounded-md hover:bg-gray-50"
-                  onClick={() => updateCourseStatus(course.id, 'archived')}
+                  onClick={() => updateCourseStatus(course._id, 'archived')}
                 >
                   Archive
                 </button>
@@ -254,11 +261,11 @@ function CoursesGrid({ setActiveTab }: { setActiveTab: (tab: string) => void }) 
               
               {/* Students button - only visible for published courses */}
               {course.status === 'published' && (
-                <Link href={`/courses/${course.id}/students`} onClick={(e) => {
+                <Link href={`/courses/${course._id}/students`} onClick={(e) => {
                   // Prevent default so wouter can handle the navigation
                   e.preventDefault();
                   // Navigate programmatically
-                  window.history.pushState(null, "", `/courses/${course.id}/students`);
+                  window.history.pushState(null, "", `/courses/${course._id}/students`);
                   // Force a reload to make sure route is processed properly
                   window.location.reload();
                 }}>
@@ -431,40 +438,35 @@ export default function CreatorDashboardPage() {
               {/* Get course ID from URL parameters or route parameters */}
               {(() => {
                 // Check for edit/curriculum route first (most specific)
-                if (editCurriculumParams?.courseId) {
-                  const courseId = parseInt(editCurriculumParams.courseId, 10);
-                  console.log("Creating CourseCreationForm with courseId from edit/curriculum route:", courseId);
-                  return <CourseCreationForm courseId={courseId} />;
+                if (editCurriculumParams?.courseId) {                  
+                  return <CourseCreationForm courseId={editCurriculumParams.courseId} />;
                 }
                 
                 // Check for detail route
                 if (detailParams?.courseId) {
-                  const courseId = parseInt(detailParams.courseId, 10);
-                  console.log("Creating CourseCreationForm with courseId from detail route:", courseId);
-                  return <CourseCreationForm courseId={courseId} initialTab="details" />;
+                  console.log("Creating CourseCreationForm with courseId from detail route:", detailParams.courseId);
+                  return <CourseCreationForm courseId={detailParams.courseId} initialTab="details" />;
                 }
                 
                 // Check for edit route
                 if (params?.courseId) {
-                  const courseId = parseInt(params.courseId, 10);
-                  console.log("Creating CourseCreationForm with courseId from edit route:", courseId);
-                  return <CourseCreationForm courseId={courseId} />;
+                  console.log("Creating CourseCreationForm with courseId from edit route:", params.courseId);
+                  return <CourseCreationForm courseId={params.courseId} />;
                 }
                 
                 // Check for curriculum route
                 if (curriculumParams?.courseId) {
-                  const courseId = parseInt(curriculumParams.courseId, 10);
-                  console.log("Creating CourseCreationForm with courseId from curriculum route:", courseId);
-                  return <CourseCreationForm courseId={courseId} initialTab="curriculum" />;
+                  console.log("Creating CourseCreationForm with courseId from curriculum route:", curriculumParams.courseId);
+                  return <CourseCreationForm courseId={curriculumParams.courseId} initialTab="curriculum" />;
                 }
                 
                 // Finally, check query params (for backward compatibility)
                 const urlParams = new URLSearchParams(location.includes('?') ? location.split('?')[1] : '');
-                const courseId = urlParams.get('id') ? parseInt(urlParams.get('id')!, 10) : undefined;
+                const queryIdStr = urlParams.get('id');
                 
-                if (courseId) {
-                  console.log("Creating CourseCreationForm with courseId from query:", courseId);
-                  return <CourseCreationForm courseId={courseId} />;
+                if (queryIdStr) {
+                  console.log("Creating CourseCreationForm with courseId from query:", queryIdStr);
+                  return <CourseCreationForm courseId={queryIdStr} />;
                 }
                 
                 // No course ID found, create a new course

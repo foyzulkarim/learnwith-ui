@@ -18,7 +18,7 @@ import CourseNavTabs from "./CourseNavTabs";
 type TabType = "details" | "curriculum";
 
 type CourseCreationFormProps = {
-  courseId?: number;
+  courseId?: string;
   initialTab?: TabType;
 };
 
@@ -26,7 +26,7 @@ export default function CourseCreationForm({ courseId: propsCourseId, initialTab
   const [location, setLocation] = useLocation();
   
   // Prioritize props courseId over URL parameters
-  const [currentCourseId, setCurrentCourseId] = useState<number | undefined>(propsCourseId);
+  const [currentCourseId, setCurrentCourseId] = useState<string | undefined>(propsCourseId);
   const isEditMode = !!currentCourseId;
   const { toast } = useToast();
   
@@ -77,7 +77,7 @@ export default function CourseCreationForm({ courseId: propsCourseId, initialTab
   };
 
   // Callback for when course details are saved (especially for a new course)
-  const handleCourseSaved = (savedCourseId: number) => {
+  const handleCourseSaved = (savedCourseId: string) => {
     if (!currentCourseId) { // If it was a new course
         setCurrentCourseId(savedCourseId);
     }

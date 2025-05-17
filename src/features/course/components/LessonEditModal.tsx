@@ -38,14 +38,14 @@ interface LessonEditModalProps {
   isOpen: boolean;
   onClose: () => void;
   lesson?: {
-    id?: number;
+    _id?: string;
     title: string;
     content?: string;
     videoUrl?: string;
     duration?: string;
   };
-  moduleId: number;
-  courseId: number;
+  moduleId: string;
+  courseId: string;
   order: number;
   onSave: (lessonData: any) => Promise<void>;
 }

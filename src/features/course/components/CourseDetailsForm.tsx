@@ -24,6 +24,7 @@ const courseFormSchema = z.object({
   title: z.string().min(3, "Course title must be at least 3 characters"),
   description: z.string().min(10, "Description must be at least 10 characters"),
   categoryId: z.string().min(1, "Category is required"),
+  instructor: z.string().min(1, "Instructor is required"),  // Add instructor field
   difficulty: z.string().min(1, "Difficulty level is required"),
   price: z.string().optional(),
   isFeatured: z.boolean().default(false),
@@ -34,8 +35,8 @@ const courseFormSchema = z.object({
 type CourseFormValues = z.infer<typeof courseFormSchema>;
 
 interface CourseDetailsFormProps {
-  courseId?: number;
-  onCourseSaved: (savedCourseId: number) => void;
+  courseId?: string;
+  onCourseSaved: (savedCourseId: string) => void;
 }
 
 export default function CourseDetailsForm({ 
@@ -62,6 +63,7 @@ export default function CourseDetailsForm({
       title: "",
       description: "",
       categoryId: "",
+      instructor: "", // Include instructor field
       difficulty: "",
       price: "",
       isFeatured: false,
@@ -100,6 +102,7 @@ export default function CourseDetailsForm({
         title: courseData.title || "",
         description: courseData.description || "",
         categoryId: courseData.categoryId || "",
+        instructor: courseData.instructor || "",  // Include instructor field
         difficulty: courseData.difficulty || "",
         price: courseData.price ? courseData.price.toString() : "",
         isFeatured: courseData.isFeatured || false,
@@ -107,7 +110,7 @@ export default function CourseDetailsForm({
         isNew: courseData.isNew || true,
       });
       // Handle both property names for thumbnail
-      setThumbnailUrl(courseData.thumbnailUrl || courseData.thumbnail || "");
+      setThumbnailUrl(courseData.thumbnailUrl || "");
     }
   }, [courseData, form]);
   
@@ -118,11 +121,23 @@ export default function CourseDetailsForm({
     
     setIsSubmitting(true);
     try {
+      // Find the selected category name using the categoryId
+      const selectedCategory = hardcodedCategories.find(
+        cat => cat.id === values.categoryId
+      )?.name || "";
+
+      // Transform the form data to match the server-side validation requirements
       const courseData = {
         ...values,
+        category: selectedCategory,   // Use category name instead of categoryId
         thumbnailUrl,
+        // Add missing required fields
+        instructor: values.instructor || "Default Instructor", // Ensure instructor is included
         price: values.price ? parseFloat(values.price) : null,
       };
+      
+      // Remove categoryId as we're now using category
+      delete courseData.categoryId;
       
       const apiUrl = courseId 
         ? `/api/courses/${courseId}` 
@@ -364,6 +379,27 @@ export default function CourseDetailsForm({
               </div>
             </div>
 
+            {/* Course Instructor */}
+            <FormField
+              control={form.control}
+              name="instructor"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Instructor</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Instructor name"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Enter the name of the course instructor
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             {/* Course Flags */}
             <div className="space-y-4">
               <FormLabel>Course Flags</FormLabel>
@@ -466,4 +502,4 @@ export default function CourseDetailsForm({
       </form>
     </Form>
   );
-} 
+}
