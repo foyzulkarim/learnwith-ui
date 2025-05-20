@@ -1,210 +1,156 @@
-import { useState, useRef, useEffect } from "react";
-import { Play, Volume2, VolumeX, Settings, Maximize, Pause } from "lucide-react";
-import { Slider } from "@/components/ui/slider";
+// src/features/course/components/VideoPlayer.tsx
+import React, { useState, useEffect, useRef } from 'react';
+import ReactHlsPlayer from 'react-hls-player';
+import { apiRequest } from '@/lib/queryClient';
 
 interface VideoPlayerProps {
-  videoUrl: string;
-  thumbnailUrl: string;
+  lessonId: string;
+  thumbnailUrl?: string;
+  autoPlay?: boolean;
+  controls?: boolean;
+  width?: string | number;
+  height?: string | number;
+  className?: string;
 }
 
-export default function VideoPlayer({ videoUrl, thumbnailUrl }: VideoPlayerProps) {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [volume, setVolume] = useState(1);
-  const [isMuted, setIsMuted] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [showControls, setShowControls] = useState(true);
-  const [isLoading, setIsLoading] = useState(true);
-  
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const videoContainerRef = useRef<HTMLDivElement>(null);
-  
-  const togglePlay = () => {
-    if (videoRef.current) {
-      if (isPlaying) {
-        videoRef.current.pause();
-      } else {
-        videoRef.current.play();
-      }
-      setIsPlaying(!isPlaying);
-    }
-  };
-  
-  const toggleMute = () => {
-    if (videoRef.current) {
-      videoRef.current.muted = !isMuted;
-      setIsMuted(!isMuted);
-    }
-  };
-  
-  const handleVolumeChange = (newVolume: number[]) => {
-    if (videoRef.current) {
-      const vol = newVolume[0];
-      videoRef.current.volume = vol;
-      setVolume(vol);
-      setIsMuted(vol === 0);
-    }
-  };
-  
-  const handleTimeUpdate = () => {
-    if (videoRef.current) {
-      setCurrentTime(videoRef.current.currentTime);
-    }
-  };
-  
-  const handleLoadedMetadata = () => {
-    if (videoRef.current) {
-      setDuration(videoRef.current.duration);
-      setIsLoading(false);
-    }
-  };
-  
-  const handleSeekChange = (newTime: number[]) => {
-    if (videoRef.current) {
-      videoRef.current.currentTime = newTime[0];
-      setCurrentTime(newTime[0]);
-    }
-  };
-  
-  const toggleFullScreen = () => {
-    if (videoContainerRef.current) {
-      if (document.fullscreenElement) {
-        document.exitFullscreen();
-      } else {
-        videoContainerRef.current.requestFullscreen();
-      }
-    }
-  };
-  
-  const formatTime = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = Math.floor(seconds % 60);
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-  };
-  
-  // Hide controls after a period of inactivity
+const VideoPlayer: React.FC<VideoPlayerProps> = ({
+  lessonId,
+  thumbnailUrl,
+  autoPlay = false,
+  controls = true,
+  width = '100%',
+  height = 'auto',
+  className = '',
+}) => {
+  const [streamUrl, setStreamUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isPlaying, setIsPlaying] = useState<boolean>(autoPlay);
+  const playerRef = useRef<HTMLVideoElement>(null);
+
   useEffect(() => {
-    let timeout: NodeJS.Timeout;
-    
-    const handleMouseMove = () => {
-      setShowControls(true);
-      clearTimeout(timeout);
-      
-      timeout = setTimeout(() => {
-        if (isPlaying) {
-          setShowControls(false);
-        }
-      }, 3000);
-    };
-    
-    const containerElement = videoContainerRef.current;
-    if (containerElement) {
-      containerElement.addEventListener('mousemove', handleMouseMove);
+    // If autoPlay is true or user has clicked play, fetch the stream URL
+    if (isPlaying) {
+      fetchStreamUrl();
     }
-    
-    return () => {
-      clearTimeout(timeout);
-      if (containerElement) {
-        containerElement.removeEventListener('mousemove', handleMouseMove);
+  }, [isPlaying, lessonId]);
+
+  const fetchStreamUrl = async () => {
+    try {
+      setLoading(true);
+      
+      // Get the API base URL from environment or use default
+      const apiBaseUrl = import.meta.env.VITE_API_URL || '';
+      
+      // Construct the URL to the master playlist
+      const masterPlaylistUrl = `${apiBaseUrl}/api/videos/${lessonId}/master.m3u8`;
+      
+      console.log('Fetching master playlist from:', masterPlaylistUrl);
+      
+      // Make the request to get the master playlist
+      const response = await fetch(masterPlaylistUrl, {
+        credentials: 'include', // Include cookies for authentication
+        headers: {
+          'Accept': 'application/vnd.apple.mpegurl',
+        },
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch video: ${response.status} ${response.statusText}`);
       }
-    };
-  }, [isPlaying]);
-  
-  return (
-    <div 
-      ref={videoContainerRef} 
-      className="bg-black rounded-lg overflow-hidden mb-6 relative"
-      onMouseEnter={() => setShowControls(true)}
-      onMouseLeave={() => isPlaying && setShowControls(false)}
-    >
-      <div className="relative pb-[56.25%]">
-        {isLoading && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <img 
-              src={thumbnailUrl} 
-              alt="Video thumbnail" 
-              className="w-full h-full object-cover opacity-70"
-            />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div 
-                className="bg-white/90 p-4 rounded-full cursor-pointer"
-                onClick={togglePlay}
-              >
-                <Play className="text-primary h-8 w-8 fill-primary" />
-              </div>
-            </div>
-          </div>
-        )}
-        
-        <video
-          ref={videoRef}
-          className="absolute inset-0 w-full h-full"
-          src={videoUrl}
-          onClick={togglePlay}
-          onTimeUpdate={handleTimeUpdate}
-          onLoadedMetadata={handleLoadedMetadata}
-          onEnded={() => setIsPlaying(false)}
-        />
-        
-        {/* Video controls overlay */}
-        {showControls && (
-          <div className="absolute bottom-0 left-0 right-0 p-4 transition-opacity">
-            <div className="bg-black/70 rounded-lg p-2">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center space-x-3">
-                  <button 
-                    className="text-white hover:text-gray-300"
-                    onClick={togglePlay}
-                  >
-                    {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
-                  </button>
-                  <button 
-                    className="text-white hover:text-gray-300"
-                    onClick={toggleMute}
-                  >
-                    {isMuted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
-                  </button>
-                  <div className="w-20 hidden sm:block">
-                    <Slider 
-                      value={[isMuted ? 0 : volume]}
-                      min={0}
-                      max={1}
-                      step={0.1}
-                      onValueChange={handleVolumeChange}
-                    />
-                  </div>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <button className="text-white hover:text-gray-300">
-                    <Settings className="h-5 w-5" />
-                  </button>
-                  <button 
-                    className="text-white hover:text-gray-300"
-                    onClick={toggleFullScreen}
-                  >
-                    <Maximize className="h-5 w-5" />
-                  </button>
-                </div>
-              </div>
-              
-              <div className="flex items-center space-x-3">
-                <span className="text-white text-sm">{formatTime(currentTime)}</span>
-                <div className="w-full">
-                  <Slider
-                    value={[currentTime]}
-                    min={0}
-                    max={duration || 100}
-                    step={1}
-                    onValueChange={handleSeekChange}
-                    className="cursor-pointer"
-                  />
-                </div>
-                <span className="text-white text-sm">{formatTime(duration)}</span>
-              </div>
-            </div>
-          </div>
-        )}
+      
+      // Set the stream URL directly to the master playlist URL
+      // The HLS player will handle requesting the variant playlists and segments
+      setStreamUrl(masterPlaylistUrl);
+      setLoading(false);
+    } catch (err) {
+      console.error('Error fetching video stream:', err);
+      setError(`Failed to load video: ${err instanceof Error ? err.message : String(err)}`);
+      setLoading(false);
+    }
+  };
+
+  const handleThumbnailClick = () => {
+    setIsPlaying(true);
+  };
+
+  // Show loading state
+  if (loading && !streamUrl) {
+    return (
+      <div className={`flex justify-center items-center p-8 ${className}`}>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className={`text-red-500 p-4 ${className}`}>
+        <p>Error: {error}</p>
+        <button 
+          onClick={() => { setError(null); fetchStreamUrl(); }}
+          className="mt-2 px-4 py-2 bg-primary text-white rounded hover:bg-primary-dark"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  // Show thumbnail with play button until user clicks to play
+  if (!isPlaying && !autoPlay) {
+    return (
+      <div
+        className={`relative cursor-pointer ${className}`}
+        onClick={handleThumbnailClick}
+      >
+        <img
+          src={thumbnailUrl || `https://via.placeholder.com/640x360?text=Video+Thumbnail`}
+          alt="Video thumbnail"
+          className="w-full h-auto rounded-md"
+        />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="bg-black bg-opacity-60 rounded-full p-4">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="48"
+              height="48"
+              viewBox="0 0 24 24"
+              fill="white"
+            >
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show video player
+  return (
+    <div className={`video-player-container ${className}`}>
+      {streamUrl && (
+        <ReactHlsPlayer
+          playerRef={playerRef}
+          src={streamUrl}
+          autoPlay={isPlaying}
+          controls={controls}
+          width={width}
+          height={height}
+          hlsConfig={{
+            maxLoadingDelay: 4,
+            minAutoBitrate: 0,
+            lowLatencyMode: true,
+            xhrSetup: (xhr: XMLHttpRequest) => {
+              // Include credentials in all XHR requests made by hls.js
+              xhr.withCredentials = true;
+            }
+          }}
+        />
+      )}
     </div>
   );
-}
+};
+
+export default VideoPlayer;

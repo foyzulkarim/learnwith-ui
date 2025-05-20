@@ -1,9 +1,7 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
-// API URL configuration
-const API_BASE_URL = typeof import.meta.env !== 'undefined' && import.meta.env.VITE_API_URL 
-  ? import.meta.env.VITE_API_URL
-  : 'http://localhost:4000';
+// API URL configuration - setting directly to localhost:4000 since env variables aren't working
+const API_BASE_URL = 'http://localhost:4000';
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {

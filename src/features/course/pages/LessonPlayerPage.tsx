@@ -9,7 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { queryClient } from "@/lib/queryClient";
 import { apiRequest } from "@/lib/queryClient";
-import VideoPlayer from "../components/VideoPlayer";
+// import VideoPlayer from "../components/VideoPlayer";
+// import VideoPlayer from "../components/VideoPlayer2";
+import VideoPlayer from "../components/LessonPlayer"
 import LessonList from "../components/LessonList";
 import AIAssistant from "../../ai-assistant/components/AIAssistant";
 import { Progress } from "@/components/ui/progress";
@@ -69,7 +71,7 @@ export default function LessonPlayerPage() {
   const lessonModuleId = moduleId !== "0" ? moduleId : undefined;
   const { isLoggedIn, isLocalDev } = useAuth();
   const effectiveIsLoggedIn = isLoggedIn || isLocalDev;
-  
+
   // Debug log URL parameters
   useEffect(() => {
     console.log("URL parameters:", { courseId, moduleId, lessonId, lessonModuleId });
@@ -80,31 +82,31 @@ export default function LessonPlayerPage() {
     queryKey: [`/api/courses/${courseId}`],
     enabled: !!courseId,
   });
-  
+
   // Get curriculum data (modules and lessons)
   const { data: curriculumData } = useQuery<CurriculumData>({
     queryKey: [`/api/courses/${courseId}/curriculum`],
     enabled: !!courseId,
   });
-  
+
   // Get current lesson data using the new API structure with URL parameters
   const { data: currentLesson, isError: lessonError } = useQuery<Lesson>({
     queryKey: [`/api/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}`],
     enabled: !!courseId && moduleId !== "0" && lessonId !== "0",
   });
-  
+
   // Fallback approach if direct URL parameters fail (might happen with legacy URLs)
   const { data: fallbackLesson } = useQuery<Lesson>({
     queryKey: [`/api/courses/${courseId}/lessons/${lessonId}`],
     enabled: !!courseId && moduleId === "0" && lessonId !== "0" && lessonError === true,
   });
-  
+
   // Quiz questions for the current lesson
   // const { data: quizQuestions } = useQuery<any[]>({
   //   queryKey: [`/api/courses/${courseId}/modules/${lessonModuleId}/lessons/${lessonId}/quiz`],
   //   enabled: !!courseId && !!lessonModuleId && !!lessonId,
   // });
-  
+
   // Notes for the current lesson
   // const { data: note } = useQuery<any>({
   //   queryKey: [`/api/courses/${courseId}/modules/${lessonModuleId}/lessons/${lessonId}/note`],
@@ -115,17 +117,17 @@ export default function LessonPlayerPage() {
   const saveNoteMutation = useMutation({
     mutationFn: async (content: string) => {
       if (moduleId === "0") return Promise.reject("Module ID not found in URL");
-      
+
       return apiRequest(
-        `/api/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/note`, 
-        { content }, 
+        `/api/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/note`,
+        { content },
         { method: "POST" }
       );
     },
     onSuccess: () => {
       if (moduleId !== "0") {
-        queryClient.invalidateQueries({ 
-          queryKey: [`/api/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/note`] 
+        queryClient.invalidateQueries({
+          queryKey: [`/api/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/note`]
         });
       }
     },
@@ -135,10 +137,10 @@ export default function LessonPlayerPage() {
   const checkQuizAnswersMutation = useMutation({
     mutationFn: async (answers: Record<number, string>) => {
       if (moduleId === "0") return Promise.reject("Module ID not found in URL");
-      
+
       return apiRequest(
-        `/api/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/quiz/check`, 
-        { answers }, 
+        `/api/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}/quiz/check`,
+        { answers },
         { method: "POST" }
       );
     },
@@ -168,7 +170,7 @@ export default function LessonPlayerPage() {
 
   // Extract modules from curriculum data
   const modules = curriculumData?.modules || [];
-  
+
   // We now directly use moduleId from URL params
   // This effect just ensures lessons have moduleId property set for data consistency
   useEffect(() => {
@@ -183,16 +185,16 @@ export default function LessonPlayerPage() {
           }
         }
       }
-      
+
       // Log for debugging purposes if this is a legacy route without module ID
       if (moduleId === "0") {
         console.log("Legacy route detected - module ID not in URL");
         // Try to find which module contains this lesson for diagnostic purposes
         for (const module of modules) {
-          const foundLesson = module.lessons.find(lesson => 
+          const foundLesson = module.lessons.find(lesson =>
             getLessonId(lesson) === lessonId
           );
-          
+
           if (foundLesson) {
             console.log(`Found lesson ${lessonId} in module ${module._id}`);
             break;
@@ -201,9 +203,9 @@ export default function LessonPlayerPage() {
       }
     }
   }, [moduleId, lessonId, modules]);
-  
+
   // Calculate progress - ensure all lessons have moduleId property
-  const allLessons = modules.flatMap((module: Module) => 
+  const allLessons = modules.flatMap((module: Module) =>
     module.lessons.map(lesson => ({
       ...lesson,
       moduleId: lesson.moduleId || module._id, // Use existing moduleId or set from module
@@ -223,11 +225,11 @@ export default function LessonPlayerPage() {
       lessonId,
       hasModulesData: modules.length > 0
     });
-    
+
     if (!lessonModuleId && modules.length > 0) {
       console.warn("Module ID not available - will attempt to find based on lesson ID");
     }
-    
+
     if (!lessonModuleId && !modules.length) {
       console.error("Cannot resolve module ID: No modules data available and no moduleId in URL");
     }
@@ -248,12 +250,12 @@ export default function LessonPlayerPage() {
           autoAddedModuleId: curriculumData.modules[0]._id
         } : null
       });
-      
+
       // Check if lessons have moduleId
-      const lessonsWithoutModuleId = curriculumData.modules.flatMap(module => 
+      const lessonsWithoutModuleId = curriculumData.modules.flatMap(module =>
         module.lessons.filter(lesson => !lesson.moduleId)
       );
-      
+
       if (lessonsWithoutModuleId.length > 0) {
         console.warn(`Found ${lessonsWithoutModuleId.length} lessons without moduleId property`);
       }
@@ -262,21 +264,40 @@ export default function LessonPlayerPage() {
 
   // Determine the effective lesson (use fallback if needed)
   const effectiveLesson = currentLesson || fallbackLesson;
-  
-  // Handle loading and error states
+
+  // Enhanced loading state with debugging info
   const isLoading = !course || !effectiveLesson;
   const isMissingModuleId = moduleId === "0" && lessonId !== "0";
-  
+
+  // Add debug logging for loading state
+  useEffect(() => {
+    console.log("Loading state:", { 
+      isLoading, 
+      hasCourse: !!course, 
+      hasEffectiveLesson: !!effectiveLesson,
+      currentLesson,
+      fallbackLesson,
+      isMissingModuleId,
+      courseId,
+      moduleId,
+      lessonId
+    });
+  }, [isLoading, course, effectiveLesson, currentLesson, fallbackLesson, isMissingModuleId, courseId, moduleId, lessonId]);
+
   if (isLoading) {
     return <div className="py-10 bg-white text-center">
       <div className="animate-pulse">
         <div className="h-8 bg-gray-200 rounded w-48 mx-auto mb-4"></div>
         <div className="h-4 bg-gray-200 rounded w-64 mx-auto"></div>
-        {isMissingModuleId && modules.length > 0 && (
-          <div className="mt-4 text-amber-600 text-sm">
-            Module ID missing from URL - this might cause issues with API requests
-          </div>
-        )}
+        <div className="mt-4 text-red-500 text-sm">
+          {!course && <div>Waiting for course data...</div>}
+          {!effectiveLesson && <div>Waiting for lesson data...</div>}
+          {isMissingModuleId && modules.length > 0 && (
+            <div className="mt-2 text-amber-600">
+              Module ID missing from URL - this might cause issues with API requests
+            </div>
+          )}
+        </div>
       </div>
     </div>;
   }
@@ -300,8 +321,8 @@ export default function LessonPlayerPage() {
       {/* Top navigation bar */}
       <header className="border-b border-gray-200 py-3 px-4 bg-white flex items-center justify-between shadow-sm sticky top-0 z-30">
         <div className="flex items-center">
-          <Link 
-            href={`/course/${courseId}`} 
+          <Link
+            href={`/course/${courseId}`}
             className="flex items-center text-gray-700 hover:text-primary mr-4 border border-gray-200 rounded-md py-1 px-2 hover:bg-gray-50 transition-colors"
             onClick={e => {
               e.preventDefault();
@@ -311,11 +332,11 @@ export default function LessonPlayerPage() {
             <ChevronLeft className="h-5 w-5" />
             <span className="ml-1 text-sm">Back to course</span>
           </Link>              <div>
-                <h1 className="text-lg font-semibold tracking-tight">{course.title}</h1>
-                <div className="flex items-center text-sm text-gray-500">
-                  <span>{effectiveLesson?.title}</span>
-                </div>
-              </div>
+            <h1 className="text-lg font-semibold tracking-tight">{course.title}</h1>
+            <div className="flex items-center text-sm text-gray-500">
+              <span>{effectiveLesson?.title}</span>
+            </div>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <button className="text-gray-600 hover:text-primary transition-colors">
@@ -331,10 +352,18 @@ export default function LessonPlayerPage() {
           {/* Video player area */}
           <div className="bg-black rounded-2xl shadow-lg overflow-hidden mb-6 relative">
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10 pointer-events-none" />
-            <VideoPlayer 
-              videoUrl={effectiveLesson?.videoUrl || "https://demo-videos.vercel.app/placeholder.mp4"} 
-              thumbnailUrl={course.thumbnailUrl}
-            />
+            {/* Added explicit conditional rendering of VideoPlayer based on lesson ID */}
+            {effectiveLesson?._id ? (
+              <VideoPlayer
+                lessonId={effectiveLesson._id}
+                title={effectiveLesson.title || ''}
+                thumbnailUrl={course.thumbnailUrl}
+              />
+            ) : (
+              <div className="p-4 text-red-500">
+                Error: No lesson ID available. Check the URL parameters.
+              </div>
+            )}
           </div>
           {/* Lesson details area */}
           <div className="">
@@ -410,8 +439,8 @@ export default function LessonPlayerPage() {
                           return (
                             <div key={question.id} className="bg-white rounded-lg shadow p-4 mb-2 border border-gray-100 transition-all hover:shadow-md">
                               <p className="font-medium mb-2 text-gray-900">{index + 1}. {question.question}</p>
-                              <RadioGroup 
-                                value={quizAnswers[question.id] || ""} 
+                              <RadioGroup
+                                value={quizAnswers[question.id] || ""}
                                 onValueChange={value => setQuizAnswers({ ...quizAnswers, [question.id]: value })}
                               >
                                 <div className="space-y-2">
@@ -427,7 +456,7 @@ export default function LessonPlayerPage() {
                           );
                         })}
                       </div>
-                      <Button 
+                      <Button
                         className="mt-6 bg-primary hover:bg-primary/90 transition-colors shadow"
                         onClick={handleCheckAnswers}
                         disabled={checkQuizAnswersMutation.isPending || !effectiveIsLoggedIn}
@@ -442,16 +471,16 @@ export default function LessonPlayerPage() {
               <TabsContent value="notes">
                 <div className="bg-white rounded-xl shadow p-6">
                   <h3 className="text-lg font-semibold mb-4">Your Notes</h3>
-                  <Textarea 
-                    className="w-full border border-gray-300 rounded-lg p-3 min-h-[200px] focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-base" 
+                  <Textarea
+                    className="w-full border border-gray-300 rounded-lg p-3 min-h-[200px] focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-base"
                     placeholder="Add your notes for this lesson here..."
                     value={noteContent}
                     onChange={e => setNoteContent(e.target.value)}
                     disabled={!effectiveIsLoggedIn}
                   />
                   {!effectiveIsLoggedIn && <div className="text-xs text-red-500 mt-2">Login to take notes</div>}
-                  <Button 
-                    variant="secondary" 
+                  <Button
+                    variant="secondary"
                     className="mt-3 bg-gray-100 hover:bg-gray-200 text-foreground flex items-center gap-2 shadow"
                     onClick={handleSaveNote}
                     disabled={saveNoteMutation.isPending || !effectiveIsLoggedIn}
@@ -495,8 +524,8 @@ export default function LessonPlayerPage() {
         </div>
         {/* Sidebar with course content */}
         <div className="md:w-1/3 lg:w-1/4 border-l border-gray-200 bg-white/80 sticky top-[64px] h-[calc(100vh-64px)] shadow-inner p-2 md:p-4">
-          <LessonList 
-            courseId={courseId} 
+          <LessonList
+            courseId={courseId}
             modules={modules.map(module => ({
               ...module,
               lessons: module.lessons.map(lesson => ({
@@ -508,7 +537,7 @@ export default function LessonPlayerPage() {
             // but we still pass these as fallbacks
             currentLessonId={lessonId}
             currentModuleId={moduleId}
-            isLocked={!effectiveIsLoggedIn} 
+            isLocked={!effectiveIsLoggedIn}
           />
         </div>
       </div>
