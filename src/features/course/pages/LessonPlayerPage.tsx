@@ -11,7 +11,7 @@ import { queryClient } from "@/lib/queryClient";
 import { apiRequest } from "@/lib/queryClient";
 // import VideoPlayer from "../components/VideoPlayer";
 // import VideoPlayer from "../components/VideoPlayer2";
-import VideoPlayer from "../components/LessonPlayer"
+import LessonPlayer from "../components/LessonPlayer"
 import LessonList from "../components/LessonList";
 import AIAssistant from "../../ai-assistant/components/AIAssistant";
 import { Progress } from "@/components/ui/progress";
@@ -354,10 +354,11 @@ export default function LessonPlayerPage() {
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10 pointer-events-none" />
             {/* Added explicit conditional rendering of VideoPlayer based on lesson ID */}
             {effectiveLesson?._id ? (
-              <VideoPlayer
+              <LessonPlayer
                 lessonId={effectiveLesson._id}
                 title={effectiveLesson.title || ''}
-                thumbnailUrl={course.thumbnailUrl}
+                courseId={courseId}
+                moduleId={moduleId}
               />
             ) : (
               <div className="p-4 text-red-500">

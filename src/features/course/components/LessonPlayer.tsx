@@ -1,14 +1,16 @@
 // src/features/course/components/LessonPlayer.tsx
 import React from 'react';
-import DirectSasVideoPlayer from './DirectSasVideoPlayer';
+import HlsPlayer from './HlsPlayer';
 
 interface LessonPlayerProps {
   lessonId: string;
   title: string;
   thumbnailUrl?: string;
+  courseId: string;
+  moduleId: string;
 }
 
-const LessonPlayer: React.FC<LessonPlayerProps> = ({ lessonId, title, thumbnailUrl }) => {
+const LessonPlayer: React.FC<LessonPlayerProps> = ({ lessonId, title,   courseId, moduleId }) => {
   // Super simple component using iframe-based player
   console.log("LessonPlayer rendering with lessonId:", lessonId);
   
@@ -20,9 +22,10 @@ const LessonPlayer: React.FC<LessonPlayerProps> = ({ lessonId, title, thumbnailU
     <div className="lesson-video-container">
       <h2 className="text-xl font-semibold mb-4">{title}</h2>
       <div className="video-wrapper rounded-lg overflow-hidden shadow-lg">
-        <DirectSasVideoPlayer 
+        <HlsPlayer 
           lessonId={lessonId} 
-          thumbnailUrl={thumbnailUrl}
+          courseId={courseId}
+          moduleId={moduleId}
         />
       </div>
     </div>
