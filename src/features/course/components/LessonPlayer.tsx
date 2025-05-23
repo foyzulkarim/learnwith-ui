@@ -6,11 +6,9 @@ interface LessonPlayerProps {
   lessonId: string;
   title: string;
   thumbnailUrl?: string;
-  courseId: string;
-  moduleId: string;
 }
 
-const LessonPlayer: React.FC<LessonPlayerProps> = ({ lessonId, title,   courseId, moduleId }) => {
+const LessonPlayer: React.FC<LessonPlayerProps> = ({ lessonId, title }) => {
   // Super simple component using iframe-based player
   console.log("LessonPlayer rendering with lessonId:", lessonId);
   
@@ -19,16 +17,9 @@ const LessonPlayer: React.FC<LessonPlayerProps> = ({ lessonId, title,   courseId
   }
   
   return (
-    <div className="lesson-video-container">
-      <h2 className="text-xl font-semibold mb-4">{title}</h2>
-      <div className="video-wrapper rounded-lg overflow-hidden shadow-lg">
-        <HlsPlayer 
+    <HlsPlayer 
           lessonId={lessonId} 
-          courseId={courseId}
-          moduleId={moduleId}
         />
-      </div>
-    </div>
   );
 };
 

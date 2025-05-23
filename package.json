@@ -68,11 +68,12 @@
     "uuid": "^11.1.0",
     "vaul": "^1.1.0",
     "wouter": "^3.3.5",
-    "zod": "^3.23.8",
+    "zod": "^3.25.23",
     "zod-validation-error": "^3.4.0"
   },
   "devDependencies": {
     "@replit/vite-plugin-runtime-error-modal": "^0.0.3",
+    "@stagewise/toolbar-react": "^0.1.2",
     "@tailwindcss/typography": "^0.5.15",
     "@types/node": "20.16.11",
     "@types/react": "^18.3.11",
