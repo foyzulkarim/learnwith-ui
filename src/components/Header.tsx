@@ -12,15 +12,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { BookOpen, ChevronDown, Menu, Search, LogIn, UserPlus } from "lucide-react";
 import { useMobile } from "@/hooks/use-mobile";
-import { useAuth } from "../features/auth/context/AuthContext";
+import { useAuth } from "@/features/auth/context/AuthContext";
 
 export default function Header() {
   const [location] = useLocation();
   const isMobile = useMobile();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const { isLoggedIn, isLocalDev, user, logout } = useAuth();
-  const effectiveIsLoggedIn = isLoggedIn || isLocalDev;
+  const { isLoggedIn, user, logout } = useAuth();
+  const effectiveIsLoggedIn = isLoggedIn;
   const [, navigate] = useLocation();
 
   const handleSearch = (e: React.FormEvent) => {
@@ -41,7 +41,7 @@ export default function Header() {
               <span>Foyzul's Academy</span>
             </Link>
           </div>
-          
+
           {/* Desktop Navigation */}
           <nav className="hidden md:flex space-x-8">
             <Link href="/" className={`font-medium ${location === '/' ? 'text-primary' : 'text-foreground hover:text-primary transition-colors'}`}>
@@ -59,7 +59,7 @@ export default function Header() {
               </Link>
             )}
           </nav>
-          
+
           <div className="flex items-center space-x-4">
             {/* Search Box (Desktop) */}
             <form onSubmit={handleSearch} className="hidden md:block relative">
@@ -72,7 +72,7 @@ export default function Header() {
               />
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
             </form>
-            
+
             {effectiveIsLoggedIn ? (
               /* Logged In - Profile Dropdown */
               <DropdownMenu>
@@ -93,7 +93,7 @@ export default function Header() {
                   <DropdownMenuItem>Settings</DropdownMenuItem>
                   <DropdownMenuItem>Help Center</DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     className="text-red-600 cursor-pointer"
                     onClick={() => {
                       logout();
@@ -107,18 +107,18 @@ export default function Header() {
             ) : (
               /* Not Logged In - Auth Buttons */
               <div className="flex items-center space-x-2">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   className="hidden md:flex items-center"
                   onClick={() => navigate("/login")}
                 >
                   <LogIn className="mr-1 h-4 w-4" />
                   Login
                 </Button>
-                <Button 
-                  variant="default" 
-                  size="sm" 
+                <Button
+                  variant="default"
+                  size="sm"
                   className="hidden md:flex items-center bg-primary hover:bg-primary/90"
                   onClick={() => navigate("/register")}
                 >
@@ -127,11 +127,11 @@ export default function Header() {
                 </Button>
               </div>
             )}
-            
+
             {/* Mobile Menu Button */}
-            <Button 
-              variant="ghost" 
-              size="icon" 
+            <Button
+              variant="ghost"
+              size="icon"
               className="md:hidden"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
@@ -139,7 +139,7 @@ export default function Header() {
             </Button>
           </div>
         </div>
-        
+
         {/* Mobile Menu */}
         {mobileMenuOpen && (
           <div className="md:hidden pb-4">
@@ -168,7 +168,7 @@ export default function Header() {
                   Creator Dashboard
                 </Link>
               )}
-              
+
               {!effectiveIsLoggedIn && (
                 <>
                   <div className="border-t border-gray-200 dark:border-gray-700 my-2 pt-2"></div>
@@ -182,14 +182,14 @@ export default function Header() {
                   </Link>
                 </>
               )}
-              
+
               {effectiveIsLoggedIn && (
                 <>
                   <div className="border-t border-gray-200 dark:border-gray-700 my-2 pt-2"></div>
                   <Link href="/profile" className="font-medium">
                     Your Profile
                   </Link>
-                  <button 
+                  <button
                     className="text-left font-medium text-red-600"
                     onClick={() => {
                       logout();
