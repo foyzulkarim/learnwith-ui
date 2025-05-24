@@ -150,14 +150,14 @@ export default function LessonEditModal({
         moduleId,
         courseId,
         order,
-        id: lesson?.id
+        _id: lesson?._id
       };
 
       await onSave(lessonData);
       
       toast({
         title: "Success",
-        description: `Lesson ${lesson?.id ? "updated" : "created"} successfully!`,
+        description: `Lesson ${lesson?._id ? "updated" : "created"} successfully!`,
       });
       
       onClose();
@@ -175,9 +175,9 @@ export default function LessonEditModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{lesson?.id ? "Edit" : "Add"} Lesson</DialogTitle>
+          <DialogTitle>{lesson?._id ? "Edit" : "Add"} Lesson</DialogTitle>
           <DialogDescription>
-            {lesson?.id
+            {lesson?._id
               ? "Update the lesson details below."
               : "Fill in the details to create a new lesson."}
           </DialogDescription>
@@ -397,7 +397,7 @@ export default function LessonEditModal({
                     Uploading...
                   </>
                 ) : (
-                  `${lesson?.id ? "Update" : "Create"} Lesson`
+                  `${lesson?._id ? "Update" : "Create"} Lesson`
                 )}
               </Button>
             </DialogFooter>

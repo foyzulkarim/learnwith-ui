@@ -30,7 +30,7 @@ export default function HomePage() {
     <>
       <HeroSection />
       
-      {isAuthenticated && <ProgressSection />}
+      {/* {isAuthenticated && <ProgressSection />} */}
       
       <section className="py-10" id="explorer">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">

@@ -24,7 +24,7 @@ interface Module {
 }
 
 interface EditingLesson {
-  _id: string;
+  _id?: string;
   moduleId: string;
   title: string;
   videoUrl: string;
@@ -387,7 +387,7 @@ export default function CourseCurriculumForm({
     const updatedModules = [...modules];
     const module = updatedModules[moduleIndex];
     
-    if (lessonData._id) {
+    if (lessonData._id && !lessonData.tempId) {
       // Update existing lesson
       updatedModules[moduleIndex] = {
         ...module,
