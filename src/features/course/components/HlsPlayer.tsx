@@ -461,17 +461,12 @@ const HlsPlayer: React.FC<HlsPlayerProps> = ({ lessonId = '68285091fb9f0dd6940c9
               onClick={togglePlayPause} // Click anywhere on this overlay to play
             >
               <div className="relative">
-                {/* Enhanced outer glow pulse */}
-                <div className="absolute inset-0 -m-8 bg-black/50 rounded-full animate-pulse scale-[2]"></div>
-                <div className="absolute inset-0 -m-4 bg-white/40 rounded-full animate-pulse scale-[1.8]"></div>
-                {/* Enhanced ping animation with higher opacity */}
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/60 to-purple-500/60 rounded-full animate-ping"></div>
-                {/* Main button with stronger colors and border */}
+                {/* Removed outer glow and animations, keeping only the main button */}
                 <button
-                  className="relative p-6 bg-gradient-to-r from-blue-600 to-purple-700 rounded-full text-white hover:from-blue-700 hover:to-purple-800 transition-all duration-300 transform group-hover:scale-110 shadow-[0_0_20px_rgba(139,92,246,0.7)] backdrop-blur-sm border-2 border-white/70"
+                  className="relative p-5 bg-black/40 backdrop-blur-sm rounded-full text-white hover:bg-black/60 transition-all duration-200 transform group-hover:scale-110"
                   aria-label="Play video"
                 >
-                  <svg className="w-8 h-8 ml-1" fill="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M8 5v14l11-7z" />
                   </svg>
                 </button>
