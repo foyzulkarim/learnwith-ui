@@ -59,6 +59,8 @@ const HlsPlayer: React.FC<HlsPlayerProps> = ({ lessonId = '68285091fb9f0dd6940c9
   }, []); // Refs are stable, so no dependencies needed for useCallback itself.
 
   // Effect to manage control visibility based on player state and interactions.
+
+  // Effect to manage control visibility based on player state and interactions.
   useEffect(() => {
     if (!isPlaying || isHovering || showVolumeSlider) {
       ensureControlsVisibleAndCancelAutoHide();
@@ -157,6 +159,23 @@ const HlsPlayer: React.FC<HlsPlayerProps> = ({ lessonId = '68285091fb9f0dd6940c9
     const handleCanPlay = () => {
       setIsLoading(false);
       // Main useEffect and interaction handlers will manage control visibility.
+      
+      // Capture the first frame as poster
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          // Set the poster directly on the video element
+          video.poster = canvas.toDataURL('image/jpeg', 0.95);
+          console.log('First frame captured as poster');
+        }
+      } catch (err) {
+        console.error('Error capturing first frame:', err);
+      }
     };
 
     video.addEventListener('timeupdate', handleTimeUpdate);
@@ -409,21 +428,43 @@ const HlsPlayer: React.FC<HlsPlayerProps> = ({ lessonId = '68285091fb9f0dd6940c9
                 startAutoHideControlsTimer();
               }
             }}
-            autoPlay={true} // Set to true as per original
-            poster="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjQ1MCIgdmlld0JveD0iMCAwIDgwMCA0NTAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI4MDAiIGhlaWdodD0iNDUwIiBmaWxsPSIjMTExODI3Ii8+CjxjaXJjbGUgY3g9IjQwMCIgY3k9IjIyNSIgcj0iNDAiIGZpbGw9IiM2MzY2RjEiLz4KPHN2ZyB4PSIzODUiIHk9IjIxMCIgd2lkdGg9IjMwIiBoZWlnaHQ9IjMwIiBmaWxsPSJ3aGl0ZSI+CjxwYXRoIGQ9Ik04IDV2MTRsMTEtN3oiLz4KPC9zdmc+Cjwvc3ZnPgo="
+            autoPlay={false} // Disabled autoplay so user must click play
+            poster="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjQ1MCIgdmlld0JveD0iMCAwIDgwMCA0NTAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI4MDAiIGhlaWdodD0iNDUwIiBmaWxsPSIjMTExODI3Ii8+CjxjaXJjbGUgY3g9IjQwMCIgY3k9IjIyNSIgcj0iNDAiIGZpbGw9IiM2MzY2RjEiLz4KPHN2ZyB4PSIzODUiIHk9IjIxMCIgd2lkdGg9IjMwIiBoZWlnaHQ9IjMwIiBmaWxsPSJ3aGl0ZSI+CjxwYXRoIGQ9Ik08IDV2MTRsMTEtN3oiLz4KPC9zdmc+Cjwvc3ZnPgo="
           >
             Your browser does not support the video tag.
           </video>
 
           {/* Loading Overlay */}
           {isLoading && (
-            <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-20">
-              <div className="flex flex-col items-center space-y-4">
-                <div className="relative">
-                  <div className="w-12 h-12 border-4 border-purple-500/30 rounded-full animate-spin"></div>
-                  <div className="absolute inset-0 w-12 h-12 border-4 border-transparent border-t-purple-500 rounded-full animate-spin"></div>
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-20">
+              <div className="flex flex-col items-center space-y-4 bg-black/40 p-6 rounded-xl backdrop-blur-md border border-white/10 shadow-2xl">
+                <div className="relative flex items-center justify-center">
+                  {/* Pulse animation behind the spinner */}
+                  <div className="absolute w-16 h-16 bg-purple-500/20 rounded-full animate-pulse"></div>
+                  
+                  {/* Main spinner with gradient */}
+                  <svg className="w-12 h-12" viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                      <linearGradient id="spinner-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#8B5CF6" />
+                        <stop offset="100%" stopColor="#6366F1" />
+                      </linearGradient>
+                    </defs>
+                    <circle 
+                      cx="25" 
+                      cy="25" 
+                      r="20" 
+                      fill="none" 
+                      strokeWidth="4"
+                      stroke="url(#spinner-gradient)"
+                      strokeLinecap="round"
+                      strokeDasharray="90, 150" 
+                      strokeDashoffset="0"
+                      className="animate-[spin_1.2s_linear_infinite]"
+                    />
+                  </svg>
                 </div>
-                <p className="text-white/80 text-sm font-medium">
+                <p className="text-white text-sm font-medium tracking-wide">
                   {isReady ? 'Switching quality...' : 'Loading video...'}
                 </p>
               </div>

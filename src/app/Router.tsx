@@ -28,17 +28,13 @@ function Router() {
             <CourseDetailPage />
           </Route>
 
-          {/* Legacy route - will be deprecated */}
-          <Route path="/course/:courseId/lesson/:lessonId">
-            <LessonPlayerPage />
-          </Route>
-          
-          {/* New route pattern with moduleId */}
-          <Route path="/course/:courseId/module/:moduleId/lesson/:lessonId">
-            <LessonPlayerPage />
-          </Route>
-
           {/* Keep protection for students, profile, dashboard, etc. */}
+
+          {/* New route pattern with moduleId */}
+          <ProtectedRoute path="/course/:courseId/module/:moduleId/lesson/:lessonId">
+            <LessonPlayerPage />
+          </ProtectedRoute>
+
           <ProtectedRoute path="/courses/:courseId/students">
             <CourseStudentsPage />
           </ProtectedRoute>

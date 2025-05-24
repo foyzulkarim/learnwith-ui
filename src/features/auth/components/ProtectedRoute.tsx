@@ -1,7 +1,7 @@
 import { ReactNode, useEffect } from 'react';
 import { useLocation, Route } from 'wouter';
 import { useAuth } from '../context/AuthContext';
-import { isLocalDevelopment } from '@/lib/environment';
+import { shouldBypassAuth } from '@/lib/environment';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -11,18 +11,18 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({ children, path }: ProtectedRouteProps) {
   const { isLoggedIn, isLoading } = useAuth();
   const [, navigate] = useLocation();
-  const isLocal = isLocalDevelopment();
+  const bypassAuth = shouldBypassAuth();
 
   useEffect(() => {
-    // Skip authentication check if running locally
-    if (!isLoading && !isLoggedIn && !isLocal) {
-      // Redirect to login if not authenticated and not in local development
+    // Skip authentication check if bypass is enabled
+    if (!isLoading && !isLoggedIn && !bypassAuth) {
+      // Redirect to login if not authenticated and bypass not enabled
       navigate('/login');
     }
-  }, [isLoggedIn, isLoading, navigate, isLocal]);
+  }, [isLoggedIn, isLoading, navigate, bypassAuth]);
 
-  if (isLoading && !isLocal) {
-    // Show loading indicator while checking auth status (skip in local dev)
+  if (isLoading && !bypassAuth) {
+    // Show loading indicator while checking auth status (skip if bypass enabled)
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
@@ -30,6 +30,6 @@ export function ProtectedRoute({ children, path }: ProtectedRouteProps) {
     );
   }
 
-  // Render the route if authenticated or in local development
-  return isLoggedIn || isLocal ? <Route path={path}>{children}</Route> : null;
+  // Render the route if authenticated or bypass is enabled
+  return isLoggedIn || bypassAuth ? <Route path={path}>{children}</Route> : null;
 }
