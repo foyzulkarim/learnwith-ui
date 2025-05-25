@@ -1,12 +1,12 @@
 {
   "builds": {
     "production": {
-      "buildCommand": "npm cache clean --force && npm install --no-optional && chmod +x ci-prebuild.js && ROLLUP_SKIP_NODEJS=true npm run build",
+      "buildCommand": "chmod +x ./build.sh && ./build.sh",
       "distDir": "dist",
       "nodeVersion": "18.x"
     },
     "preview": {
-      "buildCommand": "npm cache clean --force && npm install --no-optional && chmod +x ci-prebuild.js && ROLLUP_SKIP_NODEJS=true npm run build",
+      "buildCommand": "chmod +x ./build.sh && ./build.sh",
       "distDir": "dist",
       "nodeVersion": "18.x"
     }

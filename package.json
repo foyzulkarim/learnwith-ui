@@ -5,7 +5,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "vite",
-    "prebuild": "node ci-prebuild.js",
+    "prebuild": "node ci-prebuild.cjs",
     "build": "vite build",
     "preview": "vite preview",
     "check": "tsc",
