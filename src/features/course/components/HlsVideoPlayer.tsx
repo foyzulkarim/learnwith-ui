@@ -52,7 +52,7 @@ const HlsVideoPlayer: React.FC<HlsVideoPlayerProps> = ({
         console.log('HLS is not supported in this browser. Trying native playback.');
         // Try native playback
         if (videoRef.current) {
-          const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+          const apiBaseUrl = import.meta.env.VITE_API_URL;
           const streamUrl = `${apiBaseUrl}/api/videos/${videoId}/master.m3u8`;
           
           videoRef.current.src = streamUrl;
@@ -80,7 +80,7 @@ const HlsVideoPlayer: React.FC<HlsVideoPlayerProps> = ({
       }
 
       // Get the API base URL from environment or use default
-      const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+      const apiBaseUrl = import.meta.env.VITE_API_URL;
       const streamUrl = `${apiBaseUrl}/api/videos/${videoId}/master.m3u8`;
 
       console.log('Loading HLS stream from:', streamUrl);

@@ -38,9 +38,9 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   isLoading: false,
   error: null,
-  login: () => {},
-  register: () => {},
-  logout: async () => {},
+  login: () => { },
+  register: () => { },
+  logout: async () => { },
   isByPassAuth: false,
 });
 
@@ -51,7 +51,6 @@ export const useAuth = () => useContext(AuthContext);
 export function AuthProvider({ children }: { children: ReactNode }) {
   // const isLocalDev = isLocalDevelopment();
   const isByPassAuth = shouldBypassAuth();
-  console.log('isByPassAuth', isByPassAuth);
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(isByPassAuth);
   const [user, setUser] = useState<User | null>(isByPassAuth ? mockDevUser : null);
   const [isLoading, setIsLoading] = useState<boolean>(!isByPassAuth); // Don't show loading if in local dev
@@ -77,7 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Skip auth check if in local development
     if (isByPassAuth) return;
-    
+
     const checkAuthStatus = async () => {
       try {
         const response = await api.getUser();
@@ -105,9 +104,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       navigate('/dashboard');
       return;
     }
-    
+
     setError(null);
-    
+
     // Redirect to Google OAuth endpoint
     if (provider === 'google') {
       window.location.href = api.getGoogleAuthUrl();
@@ -128,7 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       navigate('/');
       return Promise.resolve();
     }
-    
+
     setIsLoading(true);
     try {
       await api.logout();
@@ -145,14 +144,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Provide the auth context to children components
   return (
-    <AuthContext.Provider 
-      value={{ 
-        isLoggedIn, 
-        user, 
-        isLoading, 
-        error, 
-        login, 
-        register, 
+    <AuthContext.Provider
+      value={{
+        isLoggedIn,
+        user,
+        isLoading,
+        error,
+        login,
+        register,
         logout,
         isByPassAuth
       }}
