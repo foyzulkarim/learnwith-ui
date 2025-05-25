@@ -4,12 +4,12 @@
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 // Move refreshToken above fetcher so it can be referenced
-async function refreshToken() {
-  return fetcher('/api/auth/refresh', {
-    method: 'POST',
-    body: JSON.stringify({}),
-  });
-}
+// async function refreshToken() {
+//   return fetcher('/api/auth/refresh', {
+//     method: 'POST',
+//     body: JSON.stringify({}),
+//   });
+// }
 
 /**
  * Fetch wrapper with standardized error handling
@@ -58,7 +58,7 @@ async function fetcher<T>(
         return await retryResponse.json();
       } catch (refreshError) {
         // If refresh fails, throw the original 401 error
-        console.error('Token refresh failed:', refreshError);
+        // Token refresh failed - handled by error boundary
         const errorData = await response.json().catch(() => ({}));
         throw new Error(
           errorData.message || `Authentication failed. Please login again.`
@@ -82,7 +82,7 @@ async function fetcher<T>(
     // Parse JSON response
     return await response.json();
   } catch (error) {
-    console.error('API request failed:', error);
+    // API request failed - error will be handled by calling component
     throw error;
   }
 }

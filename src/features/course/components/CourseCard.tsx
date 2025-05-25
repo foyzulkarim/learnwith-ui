@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Star } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
+import { memo } from "react";
 
 type CourseCardProps = {
   _id: string;
@@ -24,8 +25,8 @@ type CourseCardProps = {
   isInProgress?: boolean;
 };
 
-export default function CourseCard({
-  _id,
+const CourseCard = memo(function CourseCard({
+  id,
   title,
   thumbnailUrl,
   instructor,
@@ -132,4 +133,6 @@ export default function CourseCard({
       </CardFooter>
     </Card>
   );
-}
+});
+
+export default CourseCard;

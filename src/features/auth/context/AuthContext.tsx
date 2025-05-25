@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react';
 import { api } from '@/lib/api';
 import { useLocation } from 'wouter';
 import { shouldBypassAuth } from '@/lib/environment';
@@ -85,7 +85,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setIsLoggedIn(true);
         }
       } catch (err) {
-        console.log('Not authenticated');
         // User is not authenticated - this is not an error
       } finally {
         setIsLoading(false);
@@ -96,38 +95,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [isByPassAuth]);
 
   // Login function - redirects to OAuth provider
-  const login = (provider: 'google') => {
-    // If in local dev, simulate successful login
-    if (isByPassAuth) {
-      setUser(mockDevUser);
-      setIsLoggedIn(true);
-      navigate('/dashboard');
-      return;
-    }
-
+  const login = useCallback((provider: 'google') => {
     setError(null);
 
     // Redirect to Google OAuth endpoint
     if (provider === 'google') {
       window.location.href = api.getGoogleAuthUrl();
     }
-  };
+  }, []);
 
   // Register function - same as login for OAuth providers
-  const register = (provider: 'google') => {
+  const register = useCallback((provider: 'google') => {
     login(provider);
-  };
+  }, [login]);
 
   // Logout function
-  const logout = async () => {
-    // If in local dev, simulate logout
-    if (isByPassAuth) {
-      // We don't actually log out in dev mode
-      // Just simulate navigation
-      navigate('/');
-      return Promise.resolve();
-    }
-
+  const logout = useCallback(async () => {
     setIsLoading(true);
     try {
       await api.logout();
@@ -135,27 +118,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoggedIn(false);
       navigate('/');
     } catch (err) {
-      console.error('Logout error:', err);
       setError('Failed to logout. Please try again.');
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [navigate]);
+
+  // Memoize the context value to prevent unnecessary re-renders
+  const contextValue = useMemo(() => ({
+    isLoggedIn,
+    user,
+    isLoading,
+    error,
+    login,
+    register,
+    logout
+  }), [isLoggedIn, user, isLoading, error, login, register, logout]);
 
   // Provide the auth context to children components
   return (
-    <AuthContext.Provider
-      value={{
-        isLoggedIn,
-        user,
-        isLoading,
-        error,
-        login,
-        register,
-        logout,
-        isByPassAuth
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
