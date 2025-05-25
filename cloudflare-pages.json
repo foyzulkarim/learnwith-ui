@@ -1,12 +1,12 @@
 {
   "builds": {
     "production": {
-      "buildCommand": "node --input-type=module rollup-direct-fix.js && npm run build:safe",
+      "buildCommand": "npm install && npm run build",
       "distDir": "dist",
       "nodeVersion": "18.x"
     },
     "preview": {
-      "buildCommand": "node --input-type=module rollup-direct-fix.js && npm run build:safe",
+      "buildCommand": "npm install && npm run build",
       "distDir": "dist",
       "nodeVersion": "18.x"
     }

@@ -5,14 +5,10 @@
   "license": "MIT",
   "scripts": {
     "dev": "vite",
-    "prebuild": "node ci-prebuild.cjs && node --input-type=module rollup-direct-fix.js",
-    "build": "vite build --minify=esbuild",
-    "build:safe": "node --input-type=module rollup-direct-fix.js && vite build --minify=esbuild || node --unhandled-rejections=strict ./node_modules/vite/bin/vite.js build --logLevel=info --minify=esbuild",
+    "build": "vite build",
     "preview": "vite preview",
     "check": "tsc",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "build:cloudflare": "bash ./build.sh",
-    "patch:rollup": "node --input-type=module rollup-direct-fix.js"
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
