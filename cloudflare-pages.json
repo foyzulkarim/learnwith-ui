@@ -1,12 +1,12 @@
 {
   "builds": {
     "production": {
-      "buildCommand": "npm install && npm run build",
+      "buildCommand": "npm install --no-optional && npm run build",
       "distDir": "dist",
       "nodeVersion": "18.x"
     },
     "preview": {
-      "buildCommand": "npm install && npm run build",
+      "buildCommand": "npm install --no-optional && npm run build",
       "distDir": "dist",
       "nodeVersion": "18.x"
     }
