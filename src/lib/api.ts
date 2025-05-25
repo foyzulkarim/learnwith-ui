@@ -6,6 +6,16 @@ const API_BASE_URL = typeof import.meta.env !== 'undefined' && import.meta.env.V
   : 'http://localhost:4000';
 
 /**
+ * Refresh the authentication token (internal function)
+ */
+async function refreshToken(): Promise<void> {
+  await fetcher('/api/auth/refresh', { 
+    method: 'POST',
+    body: JSON.stringify({}) 
+  });
+}
+
+/**
  * Fetch wrapper with standardized error handling
  */
 async function fetcher<T>(
@@ -52,7 +62,7 @@ async function fetcher<T>(
         return await retryResponse.json();
       } catch (refreshError) {
         // If refresh fails, throw the original 401 error
-        console.error('Token refresh failed:', refreshError);
+        // Token refresh failed - handled by error boundary
         const errorData = await response.json().catch(() => ({}));
         throw new Error(
           errorData.message || `Authentication failed. Please login again.`
@@ -76,7 +86,7 @@ async function fetcher<T>(
     // Parse JSON response
     return await response.json();
   } catch (error) {
-    console.error('API request failed:', error);
+    // API request failed - error will be handled by calling component
     throw error;
   }
 }
