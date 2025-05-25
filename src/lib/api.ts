@@ -1,19 +1,15 @@
 // API client service for communicating with the backend
 
 // Use environment variables for API URLs with fallbacks for local development
-const API_BASE_URL = typeof import.meta.env !== 'undefined' && import.meta.env.VITE_API_URL 
-  ? import.meta.env.VITE_API_URL
-  : 'http://localhost:4000';
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
-/**
- * Refresh the authentication token (internal function)
- */
-async function refreshToken(): Promise<void> {
-  await fetcher('/api/auth/refresh', { 
-    method: 'POST',
-    body: JSON.stringify({}) 
-  });
-}
+// Move refreshToken above fetcher so it can be referenced
+// async function refreshToken() {
+//   return fetcher('/api/auth/refresh', {
+//     method: 'POST',
+//     body: JSON.stringify({}),
+//   });
+// }
 
 /**
  * Fetch wrapper with standardized error handling
@@ -136,3 +132,5 @@ export const api = {
     });
   },
 };
+
+export { fetcher };
