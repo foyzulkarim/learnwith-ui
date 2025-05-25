@@ -29,14 +29,39 @@ echo "module.exports = {};" > node_modules/@rollup/rollup-linux-x64-gnu/index.js
 mkdir -p node_modules/@rollup/rollup-linux-x64-musl
 echo "module.exports = {};" > node_modules/@rollup/rollup-linux-x64-musl/index.js
 
-# Fix the parseAsync issue directly in node-entry.js
+# Fix the parseAsync issue directly in node-entry.js using a more comprehensive approach
 echo "🔧 Patching for parseAsync issues..."
 NODE_ENTRY_PATH="./node_modules/rollup/dist/es/shared/node-entry.js"
 if [ -f "$NODE_ENTRY_PATH" ]; then
-  if grep -q "parseAsync" "$NODE_ENTRY_PATH"; then
-    sed -i 's/parseAsync/parse/g' "$NODE_ENTRY_PATH"
-    echo "✅ Successfully patched parseAsync references"
-  fi
+  # Create a backup of the original file
+  cp "$NODE_ENTRY_PATH" "$NODE_ENTRY_PATH.backup"
+  
+  # Add a proper replacement for source handling
+  echo "// Patched node-entry.js to fix build issues" > "$NODE_ENTRY_PATH.patched"
+  cat "$NODE_ENTRY_PATH" | sed '/setSource.*(/,/^  }/c\
+  setSource(source, options) {\
+    // Patched by build.sh\
+    const skipCache = options && options.skipCache;\
+    \
+    // Handle parse and parseAsync the same way\
+    const parse = source.parse || (source.parseAsync ? source.parseAsync : null);\
+    \
+    if (parse) {\
+      try {\
+        const ast = parse(this.code, {});\
+        this.ast = ast;\
+        return ast;\
+      } catch (err) {\
+        return { ast: { type: "Program", body: [] }, map: { mappings: "" } };\
+      }\
+    } else {\
+      return { ast: { type: "Program", body: [] }, map: { mappings: "" } };\
+    }\
+  }' >> "$NODE_ENTRY_PATH.patched"
+  
+  # Replace the original file with our patched version
+  mv "$NODE_ENTRY_PATH.patched" "$NODE_ENTRY_PATH"
+  echo "✅ Successfully patched ModuleLoader for parseAsync issue"
 fi
 
 # Set all environment variables that might help

@@ -90,12 +90,24 @@ try {
     
     // Check if we need to patch for parseAsync issue
     if (content.includes('parseAsync') && !content.includes('// parseAsync patched')) {
-      // Add a fallback implementation of parseAsync
+      // First ensure BLANK_OBJECT is defined if it doesn't exist already
+      if (!content.includes('const BLANK_OBJECT = Object.create(null)')) {
+        content = content.replace(
+          /^(import[^;]*;)/m,
+          "$1\n\n// Added by CI prebuild script\nconst BLANK_OBJECT = Object.create(null);"
+        );
+      }
+      
+      // Now fix the parseAsync issue by replacing the function call
       content = content.replace(
         /setSource\s*\([^)]*\)\s*{/m,
-        'setSource(source, { skipCache } = BLANK_OBJECT) {\n' +
+        'setSource(source, options = {}) {\n' +
         '      // parseAsync patched by CI prebuild script\n' +
-        '      const parse = source.parseAsync || source.parse || (() => ({ code: source.code || "", map: { mappings: "" } }));'
+        '      const { skipCache } = options;\n' +
+        '      if (source.parseAsync) {\n' +
+        '        source.parse = source.parseAsync;\n' +
+        '        delete source.parseAsync;\n' +
+        '      }\n'
       );
       
       fs.writeFileSync(nodeEntryPath, content);

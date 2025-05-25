@@ -1,5 +1,10 @@
-// This file ensures Vite doesn't try to use rollup's native dependencies
-export default {
+/**
+ * This file ensures Vite doesn't try to use rollup's native dependencies
+ * @typedef {import('vite').BuildOptions} BuildOptions
+ */
+
+/** @type {{build: BuildOptions}} */
+const config = {
   build: {
     rollupOptions: {
       // Set to true to disable treeshaking - helps avoid rollup native module issues
@@ -10,6 +15,8 @@ export default {
     // Disable source maps which can trigger parseAsync issues
     sourcemap: false,
     // Simplify the build process to avoid native dependency issues
-    minify: 'esbuild'
+    minify: /** @type {const} */ ('esbuild')
   }
-}
+};
+
+export default config;

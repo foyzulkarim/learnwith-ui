@@ -1,12 +1,12 @@
 {
   "builds": {
     "production": {
-      "buildCommand": "chmod +x ./build.sh && ./build.sh",
+      "buildCommand": "node --input-type=module rollup-direct-fix.js && npm run build:safe",
       "distDir": "dist",
       "nodeVersion": "18.x"
     },
     "preview": {
-      "buildCommand": "chmod +x ./build.sh && ./build.sh",
+      "buildCommand": "node --input-type=module rollup-direct-fix.js && npm run build:safe",
       "distDir": "dist",
       "nodeVersion": "18.x"
     }

@@ -6,6 +6,8 @@ import runtimeErrorOverlay from '@replit/vite-plugin-runtime-error-modal';
 import patchConfig from './vite.config.patch.js';
 // Import our plugin that disables rollup native modules
 import { disableRollupNativePlugin } from './rollup-fix-plugin';
+// Import our CloudFlare-specific plugin
+import { cloudflareRollupFix } from './cloudflare-rollup-fix';
 
 // Determine if we're in a CI environment
 const isCI = process.env.CI === 'true' || process.env.CLOUDFLARE_PAGES === 'true';
@@ -14,6 +16,8 @@ export default defineConfig({
   plugins: [
     react(),
     runtimeErrorOverlay(),
+    // Add our CloudFlare Rollup fix plugin first to handle all issues
+    isCI ? cloudflareRollupFix() : null,
     // Add our plugin to disable rollup native modules in CI environment
     ...(isCI ? [disableRollupNativePlugin()] : []),
     ...(process.env.NODE_ENV !== 'production' &&
@@ -24,7 +28,7 @@ export default defineConfig({
           ),
         ]
       : []),
-  ],
+  ].filter(Boolean),
   resolve: {
     alias: {
       '@': path.resolve(import.meta.dirname, 'src'),
