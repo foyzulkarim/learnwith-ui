@@ -6,10 +6,11 @@
   "scripts": {
     "dev": "vite",
     "prebuild": "node ci-prebuild.cjs",
-    "build": "vite build",
+    "build": "vite build || node --unhandled-rejections=strict ./node_modules/vite/bin/vite.js build --logLevel=info",
     "preview": "vite preview",
     "check": "tsc",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "build:cloudflare": "bash ./build.sh"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

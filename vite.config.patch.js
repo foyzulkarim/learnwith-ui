@@ -6,6 +6,10 @@ export default {
       treeshake: false,
       // Force use of the browser-compatible resolver
       plugins: []
-    }
+    },
+    // Disable source maps which can trigger parseAsync issues
+    sourcemap: false,
+    // Simplify the build process to avoid native dependency issues
+    minify: 'esbuild'
   }
 }

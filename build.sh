@@ -29,14 +29,24 @@ echo "module.exports = {};" > node_modules/@rollup/rollup-linux-x64-gnu/index.js
 mkdir -p node_modules/@rollup/rollup-linux-x64-musl
 echo "module.exports = {};" > node_modules/@rollup/rollup-linux-x64-musl/index.js
 
+# Fix the parseAsync issue directly in node-entry.js
+echo "🔧 Patching for parseAsync issues..."
+NODE_ENTRY_PATH="./node_modules/rollup/dist/es/shared/node-entry.js"
+if [ -f "$NODE_ENTRY_PATH" ]; then
+  if grep -q "parseAsync" "$NODE_ENTRY_PATH"; then
+    sed -i 's/parseAsync/parse/g' "$NODE_ENTRY_PATH"
+    echo "✅ Successfully patched parseAsync references"
+  fi
+fi
+
 # Set all environment variables that might help
 export ROLLUP_SKIP_NODEJS=true
 export ROLLUP_NATIVE=false
 export CI=true
-export NODE_OPTIONS="--no-node-snapshot"
+export NODE_OPTIONS="--no-node-snapshot --max-old-space-size=4096"
 
-# Run the build with all fixes applied
+# Run the build with all fixes applied and with additional logging
 echo "🏗️ Running build process..."
-npm run build
+VITE_LOG_LEVEL=info npm run build
 
 echo "✅ Build completed successfully!"

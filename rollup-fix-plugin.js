@@ -1,8 +1,9 @@
 // This plugin disables rollup's native module loading in CI environments
+// and provides fixes for common rollup build issues
 export function disableRollupNativePlugin() {
   return {
     name: 'disable-rollup-native',
-    enforce: 'pre' as const, // Explicitly type as 'pre' literal
+    enforce: 'pre', // Must run before other plugins
     resolveId(source) {
       // Prevent rollup from loading native modules
       if (source.includes('@rollup/rollup-linux')) {
@@ -16,6 +17,14 @@ export function disableRollupNativePlugin() {
         return 'export default {};';
       }
       return null;
+    },
+    // Add transform hook to handle parseAsync issues
+    transform(code, id) {
+      return {
+        code,
+        // Provide a properly formatted AST mapping to prevent parseAsync errors
+        map: { mappings: '' }
+      };
     }
   };
 }
