@@ -35,8 +35,8 @@ export default function HeroSection() {
           </div>
           <div className="md:w-1/2">
             <img 
-              src="https://images.unsplash.com/photo-1523240795612-9a054b0db644?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" 
-              alt="Students learning online" 
+              src="https://assets.foyzul.com/images/courses/fk.jpg" 
+              alt="Foyzuls Academy" 
               className="rounded-lg shadow-md"
             />
           </div>
