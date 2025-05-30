@@ -1,7 +1,7 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
-// API URL configuration - setting directly to localhost:4000 since env variables aren't working
-const API_BASE_URL = 'http://localhost:4000';
+// API URL configuration - requires VITE_API_URL environment variable
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -127,10 +127,13 @@ export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       queryFn: getQueryFn({ on401: "throw" }),
-      refetchInterval: false,
-      refetchOnWindowFocus: false,
-      staleTime: Infinity,
-      retry: false,
+      // Disable caching completely - always fetch fresh data
+      staleTime: 0, // Data is immediately considered stale
+      gcTime: 0, // Data is immediately garbage collected (replaces cacheTime)
+      refetchOnMount: 'always', // Always refetch when component mounts
+      refetchOnWindowFocus: true, // Refetch when window gains focus
+      refetchInterval: false, // Don't auto-refetch on intervals
+      retry: false, // Don't retry failed requests
     },
     mutations: {
       retry: false,

@@ -5,7 +5,7 @@ interface HlsPlayerProps {
   lessonId?: string;
 }
 
-const HlsPlayer: React.FC<HlsPlayerProps> = ({ lessonId = '68285091fb9f0dd6940c9db3' }) => {
+const HlsPlayer: React.FC<HlsPlayerProps> = ({ lessonId }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [hls, setHls] = useState<Hls | null>(null);
@@ -99,7 +99,8 @@ const HlsPlayer: React.FC<HlsPlayerProps> = ({ lessonId = '68285091fb9f0dd6940c9
     const hlsInstance = new Hls(hlsConfig);
     setHls(hlsInstance);
 
-    const manifestUrl = `http://localhost:4000/api/hls/stream/${lessonId}`;
+    const API_BASE_URL = import.meta.env.VITE_API_URL;
+    const manifestUrl = `${API_BASE_URL}/api/hls/stream/${lessonId}`;
 
     hlsInstance.loadSource(manifestUrl);
     hlsInstance.attachMedia(video);

@@ -25,6 +25,7 @@ const courseFormSchema = z.object({
   description: z.string().min(10, "Description must be at least 10 characters"),
   categoryId: z.string().min(1, "Category is required"),
   instructor: z.string().min(1, "Instructor is required"),  // Add instructor field
+  language: z.string().min(1, "Language is required"),  // Add language field
   difficulty: z.string().min(1, "Difficulty level is required"),
   price: z.string().optional(),
   isFeatured: z.boolean().default(false),
@@ -64,6 +65,7 @@ export default function CourseDetailsForm({
       description: "",
       categoryId: "",
       instructor: "", // Include instructor field
+      language: "",  // Include language field
       difficulty: "",
       price: "",
       isFeatured: false,
@@ -103,6 +105,7 @@ export default function CourseDetailsForm({
         description: courseData.description || "",
         categoryId: courseData.categoryId || "",
         instructor: courseData.instructor || "",  // Include instructor field
+        language: courseData.language || "",  // Include language field
         difficulty: courseData.difficulty || "",
         price: courseData.price ? courseData.price.toString() : "",
         isFeatured: courseData.isFeatured || false,
@@ -400,9 +403,30 @@ export default function CourseDetailsForm({
               )}
             />
 
+            {/* Course Language */}
+            <FormField
+              control={form.control}
+              name="language"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Language</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Enter the language of the course"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Specify the language of the course
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             {/* Course Flags */}
             <div className="space-y-4">
-              <FormLabel>Course Flags</FormLabel>
+              <FormLabel>Tags</FormLabel>
               <div className="flex flex-wrap gap-4">
                 <FormField
                   control={form.control}

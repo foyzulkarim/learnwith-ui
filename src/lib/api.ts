@@ -1,15 +1,28 @@
 // API client service for communicating with the backend
 
-// Use environment variables for API URLs with fallbacks for local development
+// Use environment variables for API URLs - requires VITE_API_URL to be set
 const API_BASE_URL = import.meta.env.VITE_API_URL;
 
-// Move refreshToken above fetcher so it can be referenced
-// async function refreshToken() {
-//   return fetcher('/api/auth/refresh', {
-//     method: 'POST',
-//     body: JSON.stringify({}),
-//   });
-// }
+/**
+ * Refresh the authentication token
+ */
+async function refreshToken() {
+  const url = `${API_BASE_URL}/api/auth/refresh`;
+  const response = await fetch(url, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({})
+  });
+  
+  if (!response.ok) {
+    throw new Error('Token refresh failed');
+  }
+  
+  return response.json();
+}
 
 /**
  * Fetch wrapper with standardized error handling

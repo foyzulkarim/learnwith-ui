@@ -21,7 +21,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Upload, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 // Form validation schema
@@ -60,11 +59,6 @@ export default function LessonEditModal({
   onSave,
 }: LessonEditModalProps) {
   const { toast } = useToast();
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [videoFile, setVideoFile] = useState<File | null>(null);
-  const [videoPreviewUrl, setVideoPreviewUrl] = useState<string | null>(null);
-  const [isUrlInput, setIsUrlInput] = useState(lesson?.videoUrl ? true : false);
 
   // Form setup
   const form = useForm<LessonFormValues>({
@@ -76,71 +70,6 @@ export default function LessonEditModal({
       videoUrl: lesson?.videoUrl || "",
     },
   });
-
-  // Handle video file upload
-  const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setVideoFile(file);
-      
-      // Create a preview URL for the video
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (typeof reader.result === "string") {
-          setVideoPreviewUrl(reader.result);
-        }
-      };
-      reader.readAsDataURL(file);
-
-      // Simulate upload to demonstrate UI
-      simulateVideoUpload(file);
-    }
-  };
-
-  // Simulate video upload progress - in a real app this would be a real upload
-  const simulateVideoUpload = (file: File) => {
-    setIsUploading(true);
-    setUploadProgress(0);
-    
-    const totalSize = file.size;
-    let uploadedSize = 0;
-    const chunkSize = totalSize / 10; // 10 steps
-    
-    const uploadInterval = setInterval(() => {
-      uploadedSize += chunkSize;
-      const progress = Math.min(Math.round((uploadedSize / totalSize) * 100), 100);
-      setUploadProgress(progress);
-      
-      if (progress >= 100) {
-        clearInterval(uploadInterval);
-        setIsUploading(false);
-        
-        // Set a mock video URL (in a real app, this would be the uploaded file URL)
-        const mockVideoUrl = `https://example.com/videos/${file.name.replace(/\s+/g, '-')}`;
-        form.setValue("videoUrl", mockVideoUrl);
-        
-        toast({
-          title: "Video uploaded successfully",
-          description: `Your video "${file.name}" has been uploaded.`,
-        });
-      }
-    }, 500);
-  };
-
-  // Cancel video upload
-  const cancelUpload = () => {
-    setIsUploading(false);
-    setUploadProgress(0);
-    setVideoFile(null);
-    setVideoPreviewUrl(null);
-  };
-
-  // Remove video
-  const removeVideo = () => {
-    form.setValue("videoUrl", "");
-    setVideoFile(null);
-    setVideoPreviewUrl(null);
-  };
 
   // Form submission
   const onSubmit = async (data: LessonFormValues) => {
@@ -222,148 +151,23 @@ export default function LessonEditModal({
               )}
             />
 
-            {/* Video Upload */}
-            <div className="space-y-2">
-              <FormLabel>Lesson Video</FormLabel>
-              <div className="flex items-center space-x-2 mb-2">
-                <Button
-                  type="button"
-                  variant={!isUrlInput ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setIsUrlInput(false)}
-                >
-                  Upload Video
-                </Button>
-                <Button
-                  type="button"
-                  variant={isUrlInput ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setIsUrlInput(true)}
-                >
-                  Video URL
-                </Button>
-              </div>
-              
-              {isUrlInput ? (
-                <FormField
-                  control={form.control}
-                  name="videoUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <Input
-                          placeholder="Enter video URL (YouTube, Vimeo, or direct video link)"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              ) : !form.watch("videoUrl") && !isUploading ? (
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                  <input
-                    type="file"
-                    id="video-upload"
-                    className="hidden"
-                    accept="video/*"
-                    onChange={handleVideoUpload}
-                    disabled={isUploading}
-                  />
-                  <label
-                    htmlFor="video-upload"
-                    className="flex flex-col items-center justify-center cursor-pointer"
-                  >
-                    <Upload className="h-10 w-10 text-gray-400 mb-2" />
-                    <span className="text-sm font-medium text-gray-900">
-                      Upload video
-                    </span>
-                    <span className="text-xs text-gray-500 mt-1">
-                      MP4, WebM, or Ogg (Max 100MB)
-                    </span>
-                  </label>
-                </div>
-              ) : isUploading ? (
-                <div className="border rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center">
-                      <div className="mr-2">
-                        <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">
-                          {videoFile?.name}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {uploadProgress}% uploaded
-                        </p>
-                      </div>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={cancelUpload}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-primary"
-                      style={{ width: `${uploadProgress}%` }}
-                    ></div>
-                  </div>
-                </div>
-              ) : (
-                <div className="border rounded-lg p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div className="mr-2 bg-gray-100 rounded-md p-2">
-                        <video
-                          className="h-12 w-20 object-cover"
-                          src={videoPreviewUrl || form.watch("videoUrl") || ""}
-                        />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">
-                          {videoFile?.name || "Video uploaded"}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {(() => {
-                            const videoUrl = form.watch("videoUrl");
-                            if (!videoUrl) return "URL: N/A";
-                            return videoUrl.length > 25 
-                              ? `URL: ${videoUrl.substring(0, 25)}...` 
-                              : `URL: ${videoUrl}`;
-                          })()}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex space-x-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          document.getElementById("video-upload")?.click();
-                        }}
-                      >
-                        Replace
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={removeVideo}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
+            {/* Video URL */}
+            <FormField
+              control={form.control}
+              name="videoUrl"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Video URL</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Enter video URL (YouTube, Vimeo, or direct video link)"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
               )}
-            </div>
+            />
 
             {/* Duration */}
             <FormField
@@ -387,18 +191,8 @@ export default function LessonEditModal({
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancel
               </Button>
-              <Button 
-                type="submit"
-                disabled={isUploading}
-              >
-                {isUploading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Uploading...
-                  </>
-                ) : (
-                  `${lesson?._id ? "Update" : "Create"} Lesson`
-                )}
+              <Button type="submit">
+                {lesson?._id ? "Update" : "Create"} Lesson
               </Button>
             </DialogFooter>
           </form>

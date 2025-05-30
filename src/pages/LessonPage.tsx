@@ -27,7 +27,7 @@ const LessonPage: React.FC = () => {
     const fetchLesson = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/api/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/courses/${courseId}/modules/${moduleId}/lessons/${lessonId}`, {
           credentials: 'include',
         });
         

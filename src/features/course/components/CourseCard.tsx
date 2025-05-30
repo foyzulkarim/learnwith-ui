@@ -26,7 +26,7 @@ type CourseCardProps = {
 };
 
 const CourseCard = memo(function CourseCard({
-  id,
+  _id,
   title,
   thumbnailUrl,
   instructor,

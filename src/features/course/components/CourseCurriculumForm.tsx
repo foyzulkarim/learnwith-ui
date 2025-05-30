@@ -121,7 +121,8 @@ export default function CourseCurriculumForm({
           const newState = { ...prev };
           if (prev[data.tempId.toString()]) {
             newState[data._id.toString()] = prev[data.tempId.toString()];
-            delete newState[data.tempId.toString()];
+            const { [data.tempId.toString()]: _, ...remainingState } = newState;
+            return { ...remainingState, [data._id.toString()]: newState[data._id.toString()] };
           }
           return newState;
         });

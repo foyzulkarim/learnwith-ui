@@ -147,15 +147,15 @@ export default function CourseDetailPage() {
             {course.isNew && (
               <span className="bg-green-500 text-white text-xs font-semibold px-2.5 py-0.5 rounded">NEW</span>
             )}
-            <div className="flex items-center text-yellow-400 ml-2">
+            {/* <div className="flex items-center text-yellow-400 ml-2">
               <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
               <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
               <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
               <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
               <Star className="h-5 w-5 fill-yellow-400 text-yellow-400 opacity-60" />
               <span className="ml-2 text-white text-md">{course.rating ? `(${course.rating})` : "(1,245 ratings)"}</span>
-            </div>
-            <span className="text-gray-300 ml-2">{course.studentCount?.toLocaleString() || "0"} students</span>
+            </div> */}
+            {/* <span className="text-gray-300 ml-2">{course.studentCount?.toLocaleString() || "0"} students</span> */}
           </div>
           <div className="flex items-center mb-4">
             <span className="text-gray-300">Created by</span>
@@ -168,12 +168,12 @@ export default function CourseDetailPage() {
             </div>
             <div className="flex items-center mr-6">
               <Globe className="h-4 w-4 mr-2" />
-              <span>{course.language || "English"}</span>
+              <span>{course.language || "Bengali"}</span>
             </div>
-            <div className="flex items-center">
+            {/* <div className="flex items-center">
               <MessageSquare className="h-4 w-4 mr-2" />
               <span>{course.captions?.join(", ") || "English, Spanish, Arabic captions"}</span>
-            </div>
+            </div> */}
           </div>
         </div>
         <div className="flex flex-col lg:flex-row mt-2">
@@ -210,7 +210,7 @@ export default function CourseDetailPage() {
             <div className="bg-white rounded-lg shadow-md p-8 mb-8">
               <h2 className="text-2xl font-bold mb-6">Course Overview</h2>
               <p className="text-gray-700 mb-8">{course.description}</p>
-              <div className="mb-6">
+              {/* <div className="mb-6">
                 <h3 className="font-medium mb-2">What you'll learn</h3>
                 <ul className="list-disc pl-5 text-gray-700 space-y-1">
                   <li>Core concepts and fundamentals of {course.title}</li>
@@ -218,8 +218,8 @@ export default function CourseDetailPage() {
                   <li>Best practices and industry standards</li>
                   <li>Problem-solving techniques and approaches</li>
                 </ul>
-              </div>
-              <div className="mb-6">
+              </div> */}
+              {/* <div className="mb-6">
                 <h3 className="font-medium mb-2">Course includes</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   <div className="flex items-center">
@@ -239,7 +239,7 @@ export default function CourseDetailPage() {
                     <span>Downloadable resources</span>
                   </div>
                 </div>
-              </div>
+              </div> */}
               <div>
                 <h3 className="font-medium mb-2">About the instructor</h3>
                 <div className="flex items-center">
@@ -249,7 +249,7 @@ export default function CourseDetailPage() {
                   </Avatar>
                   <div>
                     <div className="font-medium">{course.instructor || "Default Instructor"}</div>
-                    <div className="text-sm text-gray-500">Expert Instructor</div>
+                    {/* <div className="text-sm text-gray-500">Expert Instructor</div> */}
                   </div>
                 </div>
               </div>
