@@ -123,7 +123,7 @@ const CourseCard = memo(function CourseCard({
           <div className="flex justify-between items-center w-full">
             {price && <span className="text-primary font-bold">${price}</span>}
             <Link
-              href={`/course/${_id}`}
+              href={`/course/${_id}/enroll`}
               className="text-sm font-medium text-primary hover:underline"
             >
               Learn more

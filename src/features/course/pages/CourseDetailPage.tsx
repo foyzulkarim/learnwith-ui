@@ -192,17 +192,25 @@ export default function CourseDetailPage() {
                       ? "Select a lesson from the curriculum to begin" 
                       : "This course doesn't have any lessons yet"}
                   </p>
-                  <Button 
-                    className="bg-primary hover:bg-primary/90" 
-                    onClick={() => {
-                      if (firstLesson && firstLesson._id && firstLesson.moduleId) {
-                        window.location.href = `/course/${courseId}/module/${firstLesson.moduleId}/lesson/${firstLesson._id}`;
-                      }
-                    }}
-                    disabled={!firstLesson}
-                  >
-                    {allLessons.length > 0 ? "Start First Lesson" : "No Lessons Available"}
-                  </Button>
+                  {course.isEnrolled ? (
+                    <Button 
+                      className="bg-primary hover:bg-primary/90" 
+                      onClick={() => {
+                        if (firstLesson && firstLesson._id && firstLesson.moduleId) {
+                          window.location.href = `/course/${courseId}/module/${firstLesson.moduleId}/lesson/${firstLesson._id}`;
+                        }
+                      }}
+                      disabled={!firstLesson}
+                    >
+                      {allLessons.length > 0 ? "Start First Lesson" : "No Lessons Available"}
+                    </Button>
+                  ) : (
+                    <Link href={`/course/${courseId}/enroll`}>
+                      <Button className="bg-green-600 hover:bg-green-700 text-white">
+                        Enroll Now
+                      </Button>
+                    </Link>
+                  )}
                 </div>
               </div>
             </div>

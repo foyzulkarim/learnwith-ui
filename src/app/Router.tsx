@@ -13,6 +13,7 @@ import CreatorDashboardPage from "../features/dashboard/pages/CreatorDashboardPa
 import LoginPage from "../features/auth/pages/LoginPage";
 import RegisterPage from "../features/auth/pages/RegisterPage";
 import { ProtectedRoute } from "../features/auth/components/ProtectedRoute";
+import CourseEnrollmentPage from "../features/course/pages/CourseEnrollmentPage"; // Assuming this component exists
 
 function Router() {
   return (
@@ -27,14 +28,14 @@ function Router() {
           <Route path="/course/:courseId">
             <CourseDetailPage />
           </Route>
+          <Route path="/course/:courseId/enroll" component={CourseEnrollmentPage} />
+          <Route path="/course/:courseId/module/:moduleId/lesson/:lessonId">
+            <LessonPlayerPage />
+          </Route>
 
           {/* Keep protection for students, profile, dashboard, etc. */}
 
           {/* New route pattern with moduleId */}
-          <ProtectedRoute path="/course/:courseId/module/:moduleId/lesson/:lessonId">
-            <LessonPlayerPage />
-          </ProtectedRoute>
-
           <ProtectedRoute path="/courses/:courseId/students">
             <CourseStudentsPage />
           </ProtectedRoute>
@@ -74,4 +75,4 @@ function Router() {
   );
 }
 
-export default Router; 
+export default Router;
