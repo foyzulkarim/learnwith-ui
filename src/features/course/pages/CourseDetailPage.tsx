@@ -58,8 +58,8 @@ export default function CourseDetailPage() {
   const params = useParams();
   const courseId = params.courseId || "";
   const [lessonId, setLessonId] = useState<string | undefined>(undefined);
-  const { isLoggedIn, isLocalDev } = useAuth();
-  const effectiveIsLoggedIn = isLoggedIn || isLocalDev;
+  const { isLoggedIn } = useAuth();
+  const effectiveIsLoggedIn = isLoggedIn;
 
   const { data: course, isLoading: isLoadingCourse } = useQuery<Course>({
     queryKey: [`/api/courses/${courseId}`],
@@ -192,7 +192,7 @@ export default function CourseDetailPage() {
                       ? "Select a lesson from the curriculum to begin" 
                       : "This course doesn't have any lessons yet"}
                   </p>
-                  {course.isEnrolled ? (
+                  {effectiveIsLoggedIn ? (
                     <Button 
                       className="bg-primary hover:bg-primary/90" 
                       onClick={() => {
@@ -205,9 +205,9 @@ export default function CourseDetailPage() {
                       {allLessons.length > 0 ? "Start First Lesson" : "No Lessons Available"}
                     </Button>
                   ) : (
-                    <Link href={`/course/${courseId}/enroll`}>
+                    <Link href={`/login`}>
                       <Button className="bg-green-600 hover:bg-green-700 text-white">
-                        Enroll Now
+                        Login to Start
                       </Button>
                     </Link>
                   )}

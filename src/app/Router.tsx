@@ -28,12 +28,12 @@ function Router() {
           <Route path="/course/:courseId">
             <CourseDetailPage />
           </Route>
-          <Route path="/course/:courseId/enroll" component={CourseEnrollmentPage} />
-          <Route path="/course/:courseId/module/:moduleId/lesson/:lessonId">
-            <LessonPlayerPage />
-          </Route>
+          <Route path="/course/:courseId/enroll" component={CourseEnrollmentPage} />          
 
           {/* Keep protection for students, profile, dashboard, etc. */}
+          <ProtectedRoute path="/course/:courseId/module/:moduleId/lesson/:lessonId">
+            <LessonPlayerPage />
+          </ProtectedRoute>
 
           {/* New route pattern with moduleId */}
           <ProtectedRoute path="/courses/:courseId/students">
