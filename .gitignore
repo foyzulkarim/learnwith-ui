@@ -55,3 +55,15 @@ lerna-debug.log*
 
 # Don't ignore these files for Cloudflare Pages
 !.npmrc
+
+*storybook.log
+storybook-static
+
+# Testing and Coverage
+coverage/
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Vitest
+vitest.config.ts.timestamp-*
