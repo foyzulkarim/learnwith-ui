@@ -1,7 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useMemo, useCallback } from 'react';
 import { api } from '@/lib/api';
 import { useLocation } from 'wouter';
-import { shouldBypassAuth } from '@/lib/environment';
 
 // Define the type for user data
 export interface User {
@@ -21,16 +20,8 @@ interface AuthContextType {
   login: (provider: 'google') => void;
   register: (provider: 'google') => void;
   logout: () => Promise<void>;
-  isByPassAuth: boolean;
 }
 
-// Mock user for local development
-// const mockDevUser: User = {
-//   id: 'dev-user-123',
-//   name: 'Local Developer',
-//   email: 'dev@localhost',
-//   role: 'admin',
-// };
 
 // Create the context with default values
 const AuthContext = createContext<AuthContextType>({
@@ -40,8 +31,7 @@ const AuthContext = createContext<AuthContextType>({
   error: null,
   login: () => { },
   register: () => { },
-  logout: async () => { },
-  isByPassAuth: false,
+  logout: async () => { }
 });
 
 // Custom hook to use the auth context
@@ -49,11 +39,9 @@ export const useAuth = () => useContext(AuthContext);
 
 // Auth provider component
 export function AuthProvider({ children }: { children: ReactNode }) {
-  // const isLocalDev = isLocalDevelopment();
-  const isByPassAuth = shouldBypassAuth();
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(isByPassAuth);
-  const [user, setUser] = useState<User | null>(isByPassAuth ? mockDevUser : null);
-  const [isLoading, setIsLoading] = useState<boolean>(!isByPassAuth); // Don't show loading if in local dev
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [, navigate] = useLocation();
 
@@ -74,9 +62,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Check auth status on component mount
   useEffect(() => {
-    // Skip auth check if in local development
-    if (isByPassAuth) return;
-
     const checkAuthStatus = async () => {
       try {
         const response = await api.getUser();
@@ -92,7 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     checkAuthStatus();
-  }, [isByPassAuth]);
+  }, []);
 
   // Login function - redirects to OAuth provider
   const login = useCallback((provider: 'google') => {

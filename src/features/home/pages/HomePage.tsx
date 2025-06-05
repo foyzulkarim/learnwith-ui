@@ -1,9 +1,7 @@
-import { useEffect } from "react";
 import HeroSection from "../components/HeroSection";
-import ProgressSection from "../components/ProgressSection";
+import MyCoursesSection from "../components/MyCoursesSection";
 import CourseGrid from "../../course/components/CourseGrid";
 import { useQuery } from "@tanstack/react-query";
-import { queryClient } from "@/lib/queryClient";
 import { fetcher } from "@/lib/api";
 
 // Define the User type based on backend response
@@ -30,7 +28,7 @@ export default function HomePage() {
     <>
       <HeroSection />
       
-      {/* {isAuthenticated && <ProgressSection />} */}
+      {isAuthenticated && <MyCoursesSection />}
       
       <section className="py-10" id="explorer">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">

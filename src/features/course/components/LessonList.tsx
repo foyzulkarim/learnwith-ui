@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useParams } from "wouter";
+import { Link, useParams, useLocation } from "wouter";
 import { 
   Accordion,
   AccordionContent,
@@ -7,6 +7,9 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { CheckCircle2, Lock, PlayCircle, FileText, Video } from "lucide-react";
+import { api } from "@/lib/api";
+import { useAuth } from "../../auth/context/AuthContext";
+import { useQueryClient } from "@tanstack/react-query";
 
 // Helper function to safely get lesson ID regardless of property name
 const getLessonId = (lesson: any): string => {
@@ -46,6 +49,9 @@ interface LessonListProps {
 
 export default function LessonList({ courseId, modules, currentLessonId, currentModuleId, isLocked = false }: LessonListProps) {
   const [expandedModules, setExpandedModules] = useState<string[]>([]);
+  const { isLoggedIn } = useAuth();
+  const queryClient = useQueryClient();
+  const [, navigate] = useLocation();
   
   // Get current lesson and module directly from URL params - this ensures we always use the correct IDs
   const params = useParams();
@@ -57,6 +63,33 @@ export default function LessonList({ courseId, modules, currentLessonId, current
   const effectiveCourseId = urlCourseId || courseId;
   const effectiveModuleId = urlModuleId || currentModuleId;
   const effectiveLessonId = urlLessonId || currentLessonId;
+  
+  // Function to handle lesson click and mark as completed
+  const handleLessonClick = async (lessonId: string, moduleId: string, event: React.MouseEvent) => {
+    // Only proceed if user is logged in
+    if (!isLoggedIn || isLocked) {
+      return; // Let the default link navigation happen
+    }
+    
+    event.preventDefault(); // Prevent default link navigation
+    
+    try {
+      // Mark the lesson as completed
+      await api.updateLessonProgress(courseId, lessonId);
+      
+      console.log(`Lesson ${lessonId} marked as completed`);
+      
+      // Invalidate queries to refresh the data
+      queryClient.invalidateQueries({ queryKey: [`/api/enrollments/courses/${courseId}`] });
+      
+      // Navigate to the lesson page
+      navigate(`/course/${courseId}/module/${moduleId}/lesson/${lessonId}`);
+    } catch (error) {
+      console.error('Error marking lesson as completed:', error);
+      // Still navigate to the lesson even if the API call fails
+      navigate(`/course/${courseId}/module/${moduleId}/lesson/${lessonId}`);
+    }
+  };
 
   // Add logging to debug the data
   useEffect(() => {
@@ -82,6 +115,12 @@ export default function LessonList({ courseId, modules, currentLessonId, current
       if (missingIds.length > 0) {
         console.error("Warning: Found lessons without _id property:", missingIds);
       }
+      
+      // Debug lesson completion status
+      const completedLessons = modules.flatMap(module => 
+        module.lessons.filter(lesson => lesson.isCompleted)
+      );
+      console.log("LessonList completed lessons:", completedLessons.map(l => ({ id: l._id, title: l.title, isCompleted: l.isCompleted })));
     }
   }, [courseId, modules, currentLessonId, currentModuleId, urlCourseId, urlModuleId, urlLessonId, isLocked]);
 
@@ -219,7 +258,10 @@ export default function LessonList({ courseId, modules, currentLessonId, current
                           fontWeight: 'bold'
                         } : {}}
                       >
-                        <Link href={showLock ? "#" : lessonUrl}>
+                        <Link 
+                          href={showLock ? "#" : lessonUrl}
+                          onClick={(e) => !showLock && handleLessonClick(lessonId, moduleIdForUrl, e)}
+                        >
                           <div className="flex items-center justify-between cursor-pointer">
                             <div className="flex items-center">
                               {showLock ? (

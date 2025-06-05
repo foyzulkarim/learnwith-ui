@@ -34,6 +34,37 @@ interface CurriculumData {
   modules: Module[];
 }
 
+// Interface for enrollment data
+interface EnrollmentLesson {
+  lessonId: string;
+  startedAt: string;
+  completedAt?: string;
+  lastAccessedAt: string;
+  watchDuration: number;
+  notes?: string;
+  status: 'not_started' | 'in_progress' | 'completed';
+  bookmarked?: boolean;
+}
+
+interface Enrollment {
+  enrolled: boolean;
+  enrolledAt: string;
+  lastAccessedAt: string;
+  lastWatchedLessonId?: string;
+  lessons: Record<string, EnrollmentLesson>;
+  completedLessons: number;
+  progress: number;
+  notes?: string;
+  rating?: number;
+  feedback?: string;
+  course: {
+    _id: string;
+    title: string;
+    thumbnailUrl: string;
+    totalLessons: number;
+  };
+}
+
 interface Course {
   _id?: string;
   title: string;
@@ -79,14 +110,49 @@ export default function CourseDetailPage() {
     gcTime: 1000, // Short cache time (1 second)
   });
 
+  // Fetch enrollment data if user is logged in
+  const { data: enrollment, isLoading: isLoadingEnrollment } = useQuery<Enrollment>({
+    queryKey: [`/api/enrollments/courses/${courseId}`],
+    queryFn: () => fetcher<Enrollment>(`/api/enrollments/courses/${courseId}`),
+    enabled: !!courseId && effectiveIsLoggedIn,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    gcTime: 1000,
+    // Don't throw error if enrollment doesn't exist (user not enrolled)
+    retry: false,
+    onError: () => {
+      console.log('User not enrolled in this course or error fetching enrollment');
+    }
+  });
+
   // Extract modules from curriculum data
   const modules = curriculumData?.modules || [];
   
   // Log curriculum data for debugging
   console.log('Curriculum data:', curriculumData);
+  console.log('Enrollment data:', enrollment);
+
+  // Process curriculum data with enrollment information if available
+  const processedModules = modules.map(module => {
+    // Create a new module object with processed lessons
+    return {
+      ...module,
+      lessons: module.lessons.map(lesson => {
+        // Check if this lesson is completed in enrollment data
+        const enrollmentLesson = enrollment?.lessons?.[lesson._id];
+        const isCompleted = enrollmentLesson?.status === 'completed';
+        
+        // Return lesson with updated completion status
+        return {
+          ...lesson,
+          isCompleted: isCompleted || false
+        };
+      })
+    };
+  });
 
   // Safely flatten all lessons from all modules
-  const allLessons = modules.flatMap((module: Module) => 
+  const allLessons = processedModules.flatMap((module: Module) => 
     (module.lessons || []).map((lesson: Lesson) => ({
       ...lesson,
       moduleId: module._id,
@@ -98,6 +164,45 @@ export default function CourseDetailPage() {
 
   // Get first lesson for "Start First Lesson" button
   const firstLesson = allLessons.length > 0 ? allLessons.sort((a: Lesson, b: Lesson) => a.order - b.order)[0] : null;
+  
+  // Get the lesson to resume (if user is enrolled)
+  const getResumeLesson = () => {
+    if (!enrollment) return firstLesson;
+    
+    // Sort all lessons by module order and then lesson order
+    const sortedLessons = [...allLessons].sort((a, b) => {
+      const moduleA = processedModules.find(m => m._id === a.moduleId);
+      const moduleB = processedModules.find(m => m._id === b.moduleId);
+      
+      if (!moduleA || !moduleB) return 0;
+      
+      // First sort by module order
+      if (moduleA.order !== moduleB.order) {
+        return moduleA.order - moduleB.order;
+      }
+      
+      // Then by lesson order within module
+      return a.order - b.order;
+    });
+    
+    // Find the first uncompleted lesson
+    const nextLesson = sortedLessons.find(lesson => !lesson.isCompleted);
+    
+    // If all lessons are completed, use the last watched lesson
+    if (!nextLesson && enrollment.lastWatchedLessonId) {
+      const lastWatchedLesson = sortedLessons.find(lesson => 
+        lesson._id === enrollment.lastWatchedLessonId
+      );
+      return lastWatchedLesson || firstLesson;
+    }
+    
+    // Return the next uncompleted lesson or the first lesson if none found
+    return nextLesson || firstLesson;
+  };
+  
+  // Determine which lesson to use for the CTA button
+  const resumeLesson = enrollment ? getResumeLesson() : firstLesson;
+  const isEnrolled = !!enrollment?.enrolled;
 
   if (isLoadingCourse || isLoadingModules) {
     return (
@@ -186,23 +291,30 @@ export default function CourseDetailPage() {
               />
               <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
                 <div className="text-white text-center p-4">
-                  <h3 className="text-xl font-bold mb-2">Start Learning</h3>
+                  <h3 className="text-xl font-bold mb-2">
+                    {isEnrolled ? 'Resume Learning' : 'Start Learning'}
+                  </h3>
                   <p className="mb-4">
                     {allLessons.length > 0 
-                      ? "Select a lesson from the curriculum to begin" 
+                      ? isEnrolled 
+                        ? `Continue where you left off (${enrollment.progress.toFixed(0)}% complete)`
+                        : "Select a lesson from the curriculum to begin" 
                       : "This course doesn't have any lessons yet"}
                   </p>
                   {effectiveIsLoggedIn ? (
                     <Button 
                       className="bg-primary hover:bg-primary/90" 
                       onClick={() => {
-                        if (firstLesson && firstLesson._id && firstLesson.moduleId) {
-                          window.location.href = `/course/${courseId}/module/${firstLesson.moduleId}/lesson/${firstLesson._id}`;
+                        if (resumeLesson && resumeLesson._id && resumeLesson.moduleId) {
+                          // Use Link navigation instead of direct window.location
+                          window.location.href = `/course/${courseId}/module/${resumeLesson.moduleId}/lesson/${resumeLesson._id}`;
                         }
                       }}
-                      disabled={!firstLesson}
+                      disabled={!resumeLesson}
                     >
-                      {allLessons.length > 0 ? "Start First Lesson" : "No Lessons Available"}
+                      {isEnrolled 
+                        ? `Resume ${resumeLesson?.title || 'Learning'}`
+                        : 'Start First Lesson'}
                     </Button>
                   ) : (
                     <Link href={`/login`}>
@@ -267,7 +379,7 @@ export default function CourseDetailPage() {
             {modules.length > 0 ? (
               <LessonList 
                 courseId={courseId}
-                modules={modules}
+                modules={processedModules}
                 currentLessonId={lessonId}
                 isLocked={!effectiveIsLoggedIn}
               />

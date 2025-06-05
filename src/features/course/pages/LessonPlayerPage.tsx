@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, Link } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { ChevronLeft, Share2, BookOpen, MessageSquare, ListChecks, Bot } from "lucide-react";
@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { queryClient } from "@/lib/queryClient";
 import { apiRequest } from "@/lib/queryClient";
+import { fetcher } from "@/lib/api";
 // import VideoPlayer from "../components/VideoPlayer";
 // import VideoPlayer from "../components/VideoPlayer2";
 import LessonPlayer from "../components/LessonPlayer"
@@ -170,6 +171,109 @@ export default function LessonPlayerPage() {
 
   // Extract modules from curriculum data
   const modules = curriculumData?.modules || [];
+  
+  // Fetch enrollment data if user is logged in - use fetcher like CourseDetailPage
+  const { data: enrollment, isLoading: isLoadingEnrollment, error: enrollmentError } = useQuery<any>({
+    queryKey: [`/api/enrollments/courses/${courseId}`],
+    queryFn: async () => {
+      console.log('Fetching enrollment data for course:', courseId);
+      try {
+        const result = await fetcher(`/api/enrollments/courses/${courseId}`);
+        console.log('Enrollment API response:', result);
+        return result;
+      } catch (error) {
+        console.error('Enrollment API error:', error);
+        throw error;
+      }
+    },
+    enabled: !!courseId && effectiveIsLoggedIn,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    gcTime: 1000,
+    // Don't throw error if enrollment doesn't exist (user not enrolled)
+    retry: false,
+    onError: (error) => {
+      console.log('User not enrolled in this course or error fetching enrollment:', error);
+    }
+  });
+
+  // Debug enrollment data
+  useEffect(() => {
+    console.log('LessonPlayerPage enrollment data:', {
+      enrollment,
+      enrollmentError,
+      isLoadingEnrollment,
+      effectiveIsLoggedIn,
+      hasLessons: !!enrollment?.lessons,
+      lessonCount: enrollment?.lessons ? Object.keys(enrollment.lessons).length : 0,
+      sampleLessons: enrollment?.lessons ? Object.entries(enrollment.lessons).slice(0, 3) : []
+    });
+  }, [enrollment, enrollmentError, isLoadingEnrollment, effectiveIsLoggedIn]);
+
+  // Mark lesson as completed when the page loads
+  useEffect(() => {
+    const markLessonAsCompleted = async () => {
+      if (!courseId || !lessonId || !effectiveIsLoggedIn) return;
+      
+      try {
+        // Call the API to mark the lesson as completed
+        await apiRequest(
+          `/api/enrollments/courses/${courseId}/lessons/${lessonId}/complete`,
+          {},
+          { method: "PUT" }
+        );
+        
+        // Invalidate relevant queries to refresh data
+        queryClient.invalidateQueries({
+          queryKey: [`/api/enrollments/courses/${courseId}`]
+        });
+        
+        console.log(`Lesson ${lessonId} marked as completed on page load`);
+      } catch (error) {
+        console.error('Error marking lesson as completed:', error);
+      }
+    };
+    
+    markLessonAsCompleted();
+  }, [courseId, lessonId, effectiveIsLoggedIn]);
+  // Use useMemo to ensure processedModules recalculates when enrollment data changes
+  const processedModules = React.useMemo(() => {
+    console.log('Recalculating processedModules with:', { 
+      modulesCount: modules.length, 
+      hasEnrollment: !!enrollment, 
+      enrollmentLessonsCount: enrollment?.lessons ? Object.keys(enrollment.lessons).length : 0 
+    });
+    
+    return modules.map(module => {
+      return {
+        ...module,
+        lessons: module.lessons.map(lesson => {
+          // Check if this lesson is completed in enrollment data
+          const enrollmentLesson = enrollment?.lessons?.[lesson._id];
+          const isCompleted = enrollmentLesson?.status === 'completed';
+          
+          // Debug logging for lesson completion status
+          if (lessonId === lesson._id) {
+            console.log(`Current lesson completion status:`, {
+              lessonId: lesson._id,
+              lessonTitle: lesson.title,
+              enrollmentLesson,
+              enrollmentStatus: enrollmentLesson?.status,
+              isCompleted,
+              originalIsCompleted: lesson.isCompleted
+            });
+          }
+          
+          return {
+            ...lesson,
+            moduleId: lesson.moduleId || module._id,
+            moduleTitle: lesson.moduleTitle || module.title,
+            isCompleted: isCompleted || lesson.isCompleted || false
+          };
+        })
+      };
+    });
+  }, [modules, enrollment, lessonId]); // Add dependencies to recalculate when these change
 
   // We now directly use moduleId from URL params
   // This effect just ensures lessons have moduleId property set for data consistency
@@ -204,8 +308,8 @@ export default function LessonPlayerPage() {
     }
   }, [moduleId, lessonId, modules]);
 
-  // Calculate progress - ensure all lessons have moduleId property
-  const allLessons = modules.flatMap((module: Module) =>
+  // Calculate progress - use processedModules which includes enrollment completion data
+  const allLessons = processedModules.flatMap((module: Module) =>
     module.lessons.map(lesson => ({
       ...lesson,
       moduleId: lesson.moduleId || module._id, // Use existing moduleId or set from module
@@ -215,6 +319,16 @@ export default function LessonPlayerPage() {
   const totalLessons = allLessons.length || 0;
   const completedLessons = allLessons.filter((lesson: Lesson) => lesson.isCompleted).length || 0;
   const progressPercentage = totalLessons > 0 ? (completedLessons / totalLessons) * 100 : 0;
+
+  // Debug progress calculation
+  useEffect(() => {
+    console.log('LessonPlayerPage progress calculation:', {
+      totalLessons,
+      completedLessons,
+      progressPercentage,
+      completedLessonDetails: allLessons.filter(l => l.isCompleted).map(l => ({ id: l._id, title: l.title }))
+    });
+  }, [totalLessons, completedLessons, progressPercentage, allLessons]);
 
   // Add debug logging for API parameters
   useEffect(() => {
@@ -527,15 +641,7 @@ export default function LessonPlayerPage() {
         <div className="md:w-1/3 lg:w-1/4 border-l border-gray-200 bg-white/80 sticky top-[64px] h-[calc(100vh-64px)] shadow-inner p-2 md:p-4">
           <LessonList
             courseId={courseId}
-            modules={modules.map(module => ({
-              ...module,
-              lessons: module.lessons.map(lesson => ({
-                ...lesson,
-                moduleId: lesson.moduleId || module._id
-              }))
-            }))}
-            // The LessonList component will use URL params directly,
-            // but we still pass these as fallbacks
+            modules={processedModules}
             currentLessonId={lessonId}
             currentModuleId={moduleId}
             isLocked={!effectiveIsLoggedIn}
