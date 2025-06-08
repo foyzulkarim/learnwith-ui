@@ -17,7 +17,6 @@ import LessonList from "../components/LessonList";
 import AIAssistant from "../../ai-assistant/components/AIAssistant";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "../../auth/context/AuthContext";
-import { isLocalDevelopment } from "@/lib/environment";
 
 // Helper function to safely get lesson ID regardless of property name
 const getLessonId = (lesson: any): string => {
@@ -464,8 +463,7 @@ export default function LessonPlayerPage() {
         {/* Main content area */}
         <div className="md:w-2/3 lg:w-3/4 p-2 md:p-6">
           {/* Video player area */}
-          <div className="bg-black rounded-2xl shadow-lg overflow-hidden mb-6 relative">
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10 pointer-events-none" />
+          <div className="rounded-2xl overflow-hidden mb-6 relative">
             {/* Added explicit conditional rendering of VideoPlayer based on lesson ID */}
             {effectiveLesson?._id ? (
               <LessonPlayer
