@@ -69,6 +69,20 @@ export const dataProvider = {
     return fetcher(`/api/lessons/${lessonId}/notes`);
   },
 
+  // Enrollments
+  getEnrollmentDetails: async (courseId: string) => {
+    return fetcher(`/api/enrollments/courses/${courseId}`);
+  },
+
+  getUserEnrolledCourses: async () => {
+    return fetcher('/api/enrollments/courses');
+  },
+
+  hasEnrolledCourses: async () => {
+    const courses = await fetcher<any[]>('/api/enrollments/courses?limit=1');
+    return courses.length > 0;
+  },
+
   // Auth
   checkAuth: async () => {
     return api.checkAuth();

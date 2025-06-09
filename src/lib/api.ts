@@ -144,6 +144,16 @@ export const api = {
       body: JSON.stringify({}) // Send empty object to avoid empty body error
     });
   },
+
+  /**
+   * Mark a lesson as completed
+   */
+  updateLessonProgress: async (courseId: string, lessonId: string) => {
+    return fetcher(`/api/enrollments/courses/${courseId}/lessons/${lessonId}/complete`, {
+      method: 'PUT',
+      body: JSON.stringify({})
+    });
+  },
 };
 
 export { fetcher };

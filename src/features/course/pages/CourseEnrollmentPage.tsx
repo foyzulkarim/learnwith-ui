@@ -45,6 +45,21 @@ interface EnrollmentData {
   userId?: string;
 }
 
+interface EnrollmentResponse {
+  enrolled: boolean;
+  enrolledAt: string;
+  lastAccessedAt: string;
+  lastWatchedLessonId: string | null;
+  completedLessons: number;
+  progress: number;
+  course: {
+    _id: string;
+    title: string;
+    thumbnailUrl: string;
+    totalLessons: number;
+  };
+}
+
 export default function CourseEnrollmentPage() {
   const params = useParams();
   const courseId = params.courseId || "";
@@ -62,29 +77,22 @@ export default function CourseEnrollmentPage() {
   });
 
   const enrollMutation = useMutation({
-    mutationFn: async (data: EnrollmentData) => {
-      const response = await fetch(`/api/courses/${courseId}/enroll`, {
+    mutationFn: async (): Promise<EnrollmentResponse> => {
+      return fetcher<EnrollmentResponse>(`/api/enrollments/courses/${courseId}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
+        body: JSON.stringify({}), // Empty object to satisfy content-type requirement
       });
-      
-      if (!response.ok) {
-        throw new Error('Failed to enroll in course');
-      }
-      
-      return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       toast({
         title: "Enrollment Successful!",
-        description: "You have been enrolled in the course. Redirecting to course page...",
+        description: `You have been enrolled in ${data.course?.title || 'the course'}. Redirecting to course page...`,
       });
       
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: [`/api/courses/${courseId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/enrollments/courses/${courseId}`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/enrollments/courses"] });
       
       // Redirect to course detail page after a short delay
       setTimeout(() => {
@@ -112,7 +120,7 @@ export default function CourseEnrollmentPage() {
     }
 
     setIsEnrolling(true);
-    enrollMutation.mutate({ courseId });
+    enrollMutation.mutate();
   };
 
   if (isLoadingCourse) {
