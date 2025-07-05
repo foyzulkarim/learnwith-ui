@@ -13,6 +13,7 @@ import {
 import { BookOpen, ChevronDown, Menu, Search, LogIn, UserPlus } from "lucide-react";
 import { useMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/features/auth/context/AuthContext";
+import { NotificationDropdown } from "@/features/notifications";
 
 export default function Header() {
   const [location] = useLocation();
@@ -74,14 +75,18 @@ export default function Header() {
             </form>
 
             {effectiveIsLoggedIn ? (
-              /* Logged In - Profile Dropdown */
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center space-x-2">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={user?.avatar || undefined} alt={user?.name || 'User'} />
-                      <AvatarFallback>{user?.name?.charAt(0) || 'U'}</AvatarFallback>
-                    </Avatar>
+              <div className="flex items-center space-x-2">
+                {/* Notification Dropdown */}
+                <NotificationDropdown />
+                
+                {/* Logged In - Profile Dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="flex items-center space-x-2">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={user?.avatar || undefined} alt={user?.name || 'User'} />
+                        <AvatarFallback>{user?.name?.charAt(0) || 'U'}</AvatarFallback>
+                      </Avatar>
                     <span className="hidden md:inline-block font-medium">{user?.name}</span>
                     <ChevronDown className="h-4 w-4" />
                   </Button>
@@ -104,6 +109,7 @@ export default function Header() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+              </div>
             ) : (
               /* Not Logged In - Auth Buttons */
               <div className="flex items-center space-x-2">
