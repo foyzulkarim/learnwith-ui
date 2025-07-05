@@ -1,8 +1,10 @@
 // src/features/notifications/components/NotificationItem.tsx
 import { formatDistanceToNow } from 'date-fns';
-import { Video, BookOpen, Info } from 'lucide-react';
+import { Video, BookOpen, Info, ExternalLink } from 'lucide-react';
+import { useLocation } from 'wouter';
 import { Notification } from '../types';
 import { useMarkAsRead } from '../hooks';
+import { getNotificationUrl } from '../utils/getNotificationUrl';
 import { cn } from '../../../lib/utils';
 
 interface NotificationItemProps {
@@ -24,6 +26,7 @@ const getNotificationIcon = (type: Notification['type']) => {
 };
 
 export const NotificationItem = ({ notification, onClick }: NotificationItemProps) => {
+  const [, navigate] = useLocation();
   const markAsReadMutation = useMarkAsRead();
 
   const handleClick = () => {
@@ -32,19 +35,37 @@ export const NotificationItem = ({ notification, onClick }: NotificationItemProp
       markAsReadMutation.mutate(notification._id);
     }
     
-    // Call optional onClick handler
+    // Handle navigation
+    const { url, isExternal } = getNotificationUrl(notification);
+    
+    if (url) {
+      if (isExternal) {
+        // Open external links in new tab
+        window.open(url, '_blank', 'noopener,noreferrer');
+      } else {
+        // Navigate to internal routes
+        navigate(url);
+      }
+    }
+    // If url is null, do nothing (no misleading redirects)
+    
+    // Call optional onClick handler (e.g., to close dropdown)
     onClick?.();
   };
 
+  const { url, isExternal } = getNotificationUrl(notification);
+  console.log(url)
+  const isClickable = url !== null;
   const timeAgo = formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true });
 
   return (
     <div
       className={cn(
-        'flex items-start gap-3 p-3 hover:bg-gray-50 cursor-pointer transition-colors',
-        !notification.isRead && 'bg-blue-50 border-l-2 border-l-blue-500'
+        'flex items-start gap-3 p-3 hover:bg-gray-50 transition-colors',
+        !notification.isRead && 'bg-blue-50 border-l-2 border-l-blue-500',
+        isClickable && 'cursor-pointer'
       )}
-      onClick={handleClick}
+      onClick={isClickable ? handleClick : undefined}
     >
       <div className="flex-shrink-0 mt-1">
         {getNotificationIcon(notification.type)}
@@ -58,9 +79,17 @@ export const NotificationItem = ({ notification, onClick }: NotificationItemProp
           )}>
             {notification.title}
           </h4>
-          {!notification.isRead && (
-            <div className="flex-shrink-0 w-2 h-2 bg-blue-500 rounded-full mt-1" />
-          )}
+          
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {/* External link indicator */}
+            {isExternal && (
+              <ExternalLink className="h-3 w-3 text-gray-400" />
+            )}
+            {/* Unread indicator */}
+            {!notification.isRead && (
+              <div className="w-2 h-2 bg-blue-500 rounded-full" />
+            )}
+          </div>
         </div>
         
         <p className="text-sm text-gray-600 mt-1 line-clamp-2">

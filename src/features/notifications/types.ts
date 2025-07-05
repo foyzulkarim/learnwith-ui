@@ -7,9 +7,12 @@ export interface Notification {
   message: string;
   metadata: {
     courseId?: string;
+    moduleId?: string;
     videoId?: string;
     courseName?: string;
     videoTitle?: string;
+    isExternal?: boolean;
+    externalUrl?: string;
     [key: string]: any;
   };
   createdAt: string;
